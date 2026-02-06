@@ -27,8 +27,12 @@ export interface Tracker {
 
 const STORAGE_KEY = 'geotracker_data';
 
-// Generate unique tracking ID
+// Generate unique tracking ID using crypto for better randomness
 export function generateTrackingId(): string {
+  if (typeof window !== 'undefined' && window.crypto && window.crypto.randomUUID) {
+    return 'track_' + window.crypto.randomUUID();
+  }
+  // Fallback for older browsers
   return 'track_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11);
 }
 
