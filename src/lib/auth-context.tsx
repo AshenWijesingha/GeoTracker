@@ -74,8 +74,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setError(null);
       const result = await signInAnonymously(auth);
-      // Create anonymous user record
-      await createOrUpdateUser(result.user.uid, 'anonymous@guest.local', 'Guest User');
+      // Create anonymous user record with UID-based identifier
+      const guestEmail = `guest_${result.user.uid}@anonymous.local`;
+      await createOrUpdateUser(result.user.uid, guestEmail, 'Guest User');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Guest sign in failed';
       setError(errorMessage);
