@@ -1,16 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './page.module.css';
 
 export default function LoginPage() {
   const router = useRouter();
-
-  useEffect(() => {
-    // Mark user as authenticated in localStorage for static deployment
-    localStorage.setItem('geotracker_authenticated', 'true');
-  }, []);
 
   const handleEnter = () => {
     localStorage.setItem('geotracker_authenticated', 'true');

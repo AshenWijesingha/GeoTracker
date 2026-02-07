@@ -35,8 +35,8 @@ export default function Dashboard() {
     setBaseUrl(window.location.origin + (process.env.NEXT_PUBLIC_BASE_PATH || ''));
     loadTrackers();
     
-    // Auto-refresh every 5 seconds
-    const interval = setInterval(loadTrackers, 5000);
+    // Auto-refresh every 10 seconds to detect changes from other tabs
+    const interval = setInterval(loadTrackers, 10000);
     return () => clearInterval(interval);
   }, [router, loadTrackers]);
 
