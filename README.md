@@ -208,6 +208,21 @@ service cloud.firestore {
 
 ## 🐛 Troubleshooting
 
+### ⚠️ Firebase Error: `auth/configuration-not-found`
+
+**This is the most common error!** It means Firebase Authentication is not enabled in your Firebase Console.
+
+**Quick Fix:**
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+2. Open project `geotracker-865d3`
+3. Enable Authentication (click "Get Started" if needed)
+4. Enable **Email/Password** sign-in method
+5. Enable **Anonymous** sign-in method
+
+📖 **For detailed step-by-step instructions, see [FIREBASE_SETUP.md](./FIREBASE_SETUP.md)**
+
+### Other Common Issues
+
 **Location not working?**
 - Check browser permissions
 - Ensure HTTPS (required for geolocation on most browsers)

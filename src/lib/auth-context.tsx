@@ -12,6 +12,7 @@ import {
 } from 'firebase/auth';
 import { auth } from './firebase';
 import { createOrUpdateUser } from './firebase-services';
+import { getFirebaseErrorMessage } from './firebase-errors';
 
 interface AuthContextType {
   user: User | null;
@@ -31,12 +32,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
-    });
+    try {
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        setUser(user);
+        setLoading(false);
+      }, (error) => {
+        console.error('Auth state change error:', error);
+        setError(getFirebaseErrorMessage(error));
+        setLoading(false);
+      });
 
-    return () => unsubscribe();
+      return () => unsubscribe();
+    } catch (error) {
+      console.error('Auth initialization error:', error);
+      setError(getFirebaseErrorMessage(error));
+      setLoading(false);
+    }
   }, []);
 
   const signIn = async (email: string, password: string) => {
@@ -46,8 +57,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Update user record in Firestore
       await createOrUpdateUser(result.user.uid, email, result.user.displayName || undefined);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Sign in failed';
+      const errorMessage = getFirebaseErrorMessage(err);
       setError(errorMessage);
+      console.error('Sign in error:', err);
       throw err;
     }
   };
@@ -64,8 +76,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Create user record in Firestore
       await createOrUpdateUser(result.user.uid, email, displayName);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Sign up failed';
+      const errorMessage = getFirebaseErrorMessage(err);
       setError(errorMessage);
+      console.error('Sign up error:', err);
       throw err;
     }
   };
@@ -78,8 +91,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const guestEmail = `guest_${result.user.uid}@anonymous.local`;
       await createOrUpdateUser(result.user.uid, guestEmail, 'Guest User');
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Guest sign in failed';
+      const errorMessage = getFirebaseErrorMessage(err);
       setError(errorMessage);
+      console.error('Guest sign in error:', err);
       throw err;
     }
   };
@@ -89,8 +103,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(null);
       await signOut(auth);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Logout failed';
+      const errorMessage = getFirebaseErrorMessage(err);
       setError(errorMessage);
+      console.error('Logout error:', err);
       throw err;
     }
   };
