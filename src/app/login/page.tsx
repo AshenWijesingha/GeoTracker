@@ -11,6 +11,10 @@ function getAuthErrorMessage(error: unknown): string {
   if (error instanceof Error && 'code' in error) {
     const authError = error as AuthError;
     switch (authError.code) {
+      case 'auth/configuration-not-found':
+        return 'Firebase Authentication is not configured. Please enable Authentication in Firebase Console.';
+      case 'auth/operation-not-allowed':
+        return 'This sign-in method is not enabled. Please enable it in Firebase Console (Authentication > Sign-in method).';
       case 'auth/user-not-found':
         return 'No account found with this email address.';
       case 'auth/wrong-password':
@@ -27,8 +31,10 @@ function getAuthErrorMessage(error: unknown): string {
         return 'Too many failed attempts. Please try again later.';
       case 'auth/network-request-failed':
         return 'Network error. Please check your connection.';
-      case 'auth/operation-not-allowed':
-        return 'This sign-in method is not enabled.';
+      case 'auth/invalid-api-key':
+        return 'Invalid Firebase API key. Please check Firebase configuration.';
+      case 'auth/app-not-authorized':
+        return 'This app is not authorized to use Firebase Authentication.';
       default:
         return authError.message || 'Authentication failed. Please try again.';
     }
