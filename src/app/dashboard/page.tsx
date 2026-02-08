@@ -65,8 +65,28 @@ export default function Dashboard() {
   }, [router, loadTrackers, user, authLoading]);
 
   const handleCreateTracker = async () => {
-    if (!trackerName.trim()) {
+    const trimmedName = trackerName.trim();
+    
+    if (!trimmedName) {
       showMessage('Please enter a tracker designation', true);
+      return;
+    }
+
+    // Validate tracker name length
+    if (trimmedName.length < 3) {
+      showMessage('Tracker name must be at least 3 characters', true);
+      return;
+    }
+
+    if (trimmedName.length > 50) {
+      showMessage('Tracker name must be less than 50 characters', true);
+      return;
+    }
+
+    // Sanitize input: remove potentially dangerous characters
+    const sanitizedName = trimmedName.replace(/[<>\"'&]/g, '');
+    if (sanitizedName !== trimmedName) {
+      showMessage('Tracker name contains invalid characters', true);
       return;
     }
 
@@ -75,7 +95,7 @@ export default function Dashboard() {
       return;
     }
 
-    const tracker = await createTrackerAsync(trackerName, user.uid);
+    const tracker = await createTrackerAsync(sanitizedName, user.uid);
     if (tracker) {
       const url = `${baseUrl}/track?id=${tracker.id}`;
       setGeneratedUrl(url);
@@ -190,9 +210,20 @@ export default function Dashboard() {
             onChange={(e) => setTrackerName(e.target.value)}
             placeholder="e.g., Operation Alpha, Asset Monitor, Field Unit"
             className={styles.input}
+            aria-label="Tracker name input"
+            aria-describedby="trackerNameHelp"
+            maxLength={50}
+            minLength={3}
           />
+          <small id="trackerNameHelp" className={styles.helpText}>
+            Enter a name between 3-50 characters
+          </small>
         </div>
-        <button className="btn" onClick={handleCreateTracker}>
+        <button 
+          className="btn" 
+          onClick={handleCreateTracker}
+          aria-label="Generate tracking link button"
+        >
           Generate Tracking Link
         </button>
 
@@ -201,7 +232,7 @@ export default function Dashboard() {
             <h3>✓ Tracking Link Generated</h3>
             <p>Share this secure link to begin surveillance (auto-updates every 15s):</p>
             <div className={styles.linkText}>{generatedUrl}</div>
-            <button className="btn btn-secondary" onClick={handleCopyLink}>
+            <button className="btn btn-secondary" onClick={handleCopyLink} aria-label="Copy tracking link to clipboard">
               📋 Copy Link
             </button>
           </div>

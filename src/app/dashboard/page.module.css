@@ -436,3 +436,10 @@
     opacity: 1;
   }
 }
+
+.helpText {
+  display: block;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 4px;
+}

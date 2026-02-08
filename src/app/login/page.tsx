@@ -101,6 +101,8 @@ export default function LoginPage() {
               placeholder="agent@command.center"
               required
               className={styles.input}
+              aria-label="Email address"
+              autoComplete="email"
             />
           </div>
           
@@ -115,6 +117,8 @@ export default function LoginPage() {
               required
               minLength={6}
               className={styles.input}
+              aria-label="Password"
+              autoComplete={isSignUp ? "new-password" : "current-password"}
             />
           </div>
 
@@ -122,6 +126,7 @@ export default function LoginPage() {
             type="submit"
             className={`btn ${styles.loginBtn}`}
             disabled={loading}
+            aria-label={isSignUp ? 'Create new account' : 'Sign in to account'}
           >
             {loading ? 'Processing...' : (isSignUp ? 'Create Account' : 'Access Command Center')}
           </button>
@@ -135,6 +140,7 @@ export default function LoginPage() {
           onClick={handleGuestAccess}
           className={`btn ${styles.guestBtn}`}
           disabled={loading}
+          aria-label="Continue as guest user"
         >
           👤 Continue as Guest
         </button>
@@ -142,6 +148,7 @@ export default function LoginPage() {
         <button 
           onClick={() => setIsSignUp(!isSignUp)}
           className={styles.toggleBtn}
+          aria-label={isSignUp ? 'Switch to sign in' : 'Switch to sign up'}
         >
           {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
         </button>

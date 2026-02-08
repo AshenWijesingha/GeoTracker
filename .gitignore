@@ -38,5 +38,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# Backup files
+*.bak
+*.backup
+*~
+
 # Data files (for local development)
 location-data.json
