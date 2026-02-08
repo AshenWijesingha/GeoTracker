@@ -373,49 +373,55 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {tracker.locations.length > 0 && (
-                <div className={styles.realtimeLocation}>
-                  <div className={styles.realtimeHeader}>
-                    <span className={styles.realtimePulse}></span>
-                    <strong>Real-Time Location</strong>
-                    <span className={styles.heartbeatInfo}>15s heartbeat</span>
-                  </div>
-                  <div className={styles.realtimeCoords}>
-                    <div className={styles.coordItem}>
-                      <div className={styles.coordLabel}>Latitude</div>
-                      <div className={styles.coordValue}>
-                        {tracker.locations[0].latitude.toFixed(6)}
-                      </div>
-                    </div>
-                    <div className={styles.coordItem}>
-                      <div className={styles.coordLabel}>Longitude</div>
-                      <div className={styles.coordValue}>
-                        {tracker.locations[0].longitude.toFixed(6)}
-                      </div>
-                    </div>
-                    <div className={styles.coordItem}>
-                      <div className={styles.coordLabel}>Accuracy</div>
-                      <div className={styles.coordValue}>
-                        ±{tracker.locations[0].accuracy.toFixed(2)}m
-                      </div>
-                    </div>
-                    <div className={styles.coordItem}>
-                      <div className={styles.coordLabel}>Last Synced</div>
-                      <div className={styles.coordValue}>
-                        {formatDate(tracker.locations[0].timestamp)}
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    className="btn btn-success"
-                    onClick={(e) =>
-                      viewOnMap(tracker.locations[0].latitude, tracker.locations[0].longitude, e)
-                    }
-                  >
-                    🗺️ View Current Location
-                  </button>
+              <div className={styles.realtimeLocation}>
+                <div className={styles.realtimeHeader}>
+                  <span className={styles.realtimePulse}></span>
+                  <strong>Real-Time Location</strong>
+                  <span className={styles.heartbeatInfo}>15s heartbeat</span>
                 </div>
-              )}
+                {tracker.locations.length > 0 ? (
+                  <>
+                    <div className={styles.realtimeCoords}>
+                      <div className={styles.coordItem}>
+                        <div className={styles.coordLabel}>Latitude</div>
+                        <div className={styles.coordValue}>
+                          {tracker.locations[0].latitude.toFixed(6)}
+                        </div>
+                      </div>
+                      <div className={styles.coordItem}>
+                        <div className={styles.coordLabel}>Longitude</div>
+                        <div className={styles.coordValue}>
+                          {tracker.locations[0].longitude.toFixed(6)}
+                        </div>
+                      </div>
+                      <div className={styles.coordItem}>
+                        <div className={styles.coordLabel}>Accuracy</div>
+                        <div className={styles.coordValue}>
+                          ±{tracker.locations[0].accuracy.toFixed(2)}m
+                        </div>
+                      </div>
+                      <div className={styles.coordItem}>
+                        <div className={styles.coordLabel}>Last Synced</div>
+                        <div className={styles.coordValue}>
+                          {formatDate(tracker.locations[0].timestamp)}
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      className="btn btn-success"
+                      onClick={(e) =>
+                        viewOnMap(tracker.locations[0].latitude, tracker.locations[0].longitude, e)
+                      }
+                    >
+                      🗺️ View Current Location
+                    </button>
+                  </>
+                ) : (
+                  <p className={styles.awaitingData}>
+                    📡 No location data received yet. Share the tracking link to begin receiving coordinates.
+                  </p>
+                )}
+              </div>
 
               {expandedTracker === tracker.id && (
                 <div className={styles.trackerDetails}>
