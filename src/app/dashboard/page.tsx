@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
@@ -220,6 +220,12 @@ export default function Dashboard() {
     setExpandedTracker(expandedTracker === trackerId ? null : trackerId);
   };
 
+  const getExportFilename = (tracker: Tracker, ext: string) => {
+    const safeName = tracker.name.replace(/[^a-zA-Z0-9]/g, '_');
+    const date = new Date().toISOString().split('T')[0];
+    return `tracker-${safeName}-${date}.${ext}`;
+  };
+
   const exportToJSON = (tracker: Tracker, e: React.MouseEvent) => {
     e.stopPropagation();
     if (tracker.locations.length === 0) {
@@ -251,7 +257,7 @@ export default function Dashboard() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `tracker-${tracker.name.replace(/[^a-zA-Z0-9]/g, '_')}-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = getExportFilename(tracker, 'json');
     a.click();
     URL.revokeObjectURL(url);
     showMessage('Location data exported as JSON!');
@@ -263,11 +269,12 @@ export default function Dashboard() {
       showMessage('No location data to export.', true);
       return;
     }
-    const escapeCsvField = (field: string) => {
-      if (field.includes(',') || field.includes('"') || field.includes('\n')) {
-        return `"${field.replace(/"/g, '""')}"`;
+    const escapeCsvField = (field: string | null | undefined) => {
+      const str = String(field ?? '');
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`;
       }
-      return field;
+      return str;
     };
     const headers = ['Timestamp', 'Latitude', 'Longitude', 'Accuracy (m)', 'Browser', 'OS', 'Platform', 'Screen', 'IP Address'];
     const rows = tracker.locations.map(loc => [
@@ -286,20 +293,20 @@ export default function Dashboard() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `tracker-${tracker.name.replace(/[^a-zA-Z0-9]/g, '_')}-${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = getExportFilename(tracker, 'csv');
     a.click();
     URL.revokeObjectURL(url);
     showMessage('Location data exported as CSV!');
   };
 
-  const filteredTrackers = trackers.filter((t) => {
+  const filteredTrackers = useMemo(() => trackers.filter((t) => {
     if (!searchQuery.trim()) return true;
     const query = searchQuery.toLowerCase();
     return (
       t.name.toLowerCase().includes(query) ||
       t.id.toLowerCase().includes(query)
     );
-  });
+  }), [trackers, searchQuery]);
 
   if (authLoading || loading) {
     return (
