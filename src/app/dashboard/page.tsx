@@ -64,6 +64,10 @@ export default function Dashboard() {
     }
   }, [user, isAdmin]);
 
+  // Use a ref for the fallback loader to avoid re-triggering the subscription effect
+  const loadTrackersRef = useRef(loadTrackers);
+  loadTrackersRef.current = loadTrackers;
+
   useEffect(() => {
     // Check if user is authenticated
     if (!authLoading && !user) {
@@ -88,7 +92,7 @@ export default function Dashboard() {
             console.error('Real-time listener failed, falling back to polling:', error);
           }
           setRealtimeActive(false);
-          loadTrackers();
+          loadTrackersRef.current();
         },
         userId
       );
@@ -100,7 +104,7 @@ export default function Dashboard() {
         unsubscribeRef.current = null;
       };
     }
-  }, [router, user, authLoading, isAdmin, loadTrackers]);
+  }, [router, user, authLoading, isAdmin]);
 
   const handleCreateTracker = async () => {
     const trimmedName = trackerName.trim();
