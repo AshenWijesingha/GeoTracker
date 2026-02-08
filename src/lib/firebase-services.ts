@@ -243,7 +243,17 @@ export async function getOrCreateTrackerInFirebase(trackingId: string, name: str
     if (existing) {
       return existing;
     }
-    return await createTrackerInFirebase(name, trackingId);
+    const created = await createTrackerInFirebase(name, trackingId);
+    if (created) {
+      return created;
+    }
+    // If createTrackerInFirebase returned null, the document may still have been
+    // created (e.g. network hiccup after write). Try fetching it once more.
+    const retryFetch = await getTrackerFromFirebase(trackingId);
+    if (!retryFetch && typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+      console.error('getOrCreateTrackerInFirebase: creation and retry fetch both failed for:', trackingId);
+    }
+    return retryFetch;
   } catch (error) {
     if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
       console.error('Error getting or creating tracker:', trackingId, error);
@@ -290,6 +300,14 @@ function isNotFoundError(error: unknown): boolean {
       return true;
     }
   }
+  // Some Firebase SDK versions include "not-found" or "No document to update"
+  // in the error message without setting a proper code.
+  if (error && typeof error === 'object' && 'message' in error) {
+    const message = String((error as Error).message).toLowerCase();
+    if (message.includes('not-found') || message.includes('no document to update')) {
+      return true;
+    }
+  }
   return false;
 }
 
@@ -316,21 +334,16 @@ export async function addLocationToTrackerInFirebase(trackingId: string, locatio
     }
   }
 
-  // Document doesn't exist yet — create it with minimal metadata, then
-  // atomically append the location via arrayUnion so that we never overwrite
-  // an existing locations array (which would happen with a plain array value
-  // even when using merge:true, because Firestore replaces arrays on merge).
+  // Document doesn't exist yet — create it with the location included directly.
+  // Use setDoc with merge:true to avoid overwriting any fields that may have been
+  // set concurrently. We include the location in the initial array since there is
+  // no existing array to conflict with.
   await setDoc(trackerRef, {
     name: 'Shared Tracker',
     created: serverTimestamp(),
-    locations: [],
+    locations: [sanitizedLocation],
   }, { merge: true });
 
-  // Now append the location atomically. The document is guaranteed to exist
-  // after the setDoc above, so updateDoc will succeed.
-  await updateDoc(trackerRef, {
-    locations: arrayUnion(sanitizedLocation),
-  });
   return true;
 }
 
