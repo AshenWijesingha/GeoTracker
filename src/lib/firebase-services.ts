@@ -14,6 +14,7 @@ import {
   onSnapshot,
   Timestamp,
   serverTimestamp,
+  arrayUnion,
   Unsubscribe,
 } from 'firebase/firestore';
 import { getFirebaseDb } from './firebase';
@@ -104,7 +105,15 @@ function parseLocationsArray(rawLocations: unknown): LocationData[] {
       validLocations.push(parsed);
     }
   }
-  return validLocations;
+
+  // Sort by timestamp descending (most recent first) to ensure correct order
+  // regardless of whether locations were prepended or appended
+  const withTime = validLocations.map(loc => ({
+    loc,
+    time: new Date(loc.timestamp).getTime(),
+  }));
+  withTime.sort((a, b) => b.time - a.time);
+  return withTime.map(({ loc }) => loc);
 }
 
 // === TRACKER OPERATIONS ===
@@ -240,29 +249,26 @@ export async function getOrCreateTrackerInFirebase(trackingId: string, name: str
   }
 }
 
-// Add location to tracker (appends to locations array)
+// Add location to tracker (atomically appends to locations array)
 export async function addLocationToTrackerInFirebase(trackingId: string, location: LocationData): Promise<boolean> {
   try {
     const db = getFirebaseDb();
-    // First ensure the tracker exists
-    let tracker = await getTrackerFromFirebase(trackingId);
-    if (!tracker) {
+    const trackerRef = doc(db, TRACKERS_COLLECTION, trackingId);
+
+    // Check if the tracker document exists
+    const trackerSnap = await getDoc(trackerRef);
+    if (!trackerSnap.exists()) {
       // Create the tracker if it doesn't exist
       const created = await createTrackerInFirebase('Shared Tracker', trackingId);
       if (!created) {
         return false;
       }
-      tracker = created;
     }
-    
-    const trackerRef = doc(db, TRACKERS_COLLECTION, trackingId);
-    
-    // Get current locations to append
-    const currentLocations = tracker.locations || [];
-    
-    // Append new location to the beginning of the array (most recent first)
+
+    // Use arrayUnion for atomic append — avoids reading the entire locations
+    // array first, preventing race conditions and reducing write payload size
     await updateDoc(trackerRef, {
-      locations: [location, ...currentLocations],
+      locations: arrayUnion(location),
     });
     return true;
   } catch (error) {

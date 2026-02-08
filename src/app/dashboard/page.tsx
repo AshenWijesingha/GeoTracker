@@ -14,6 +14,7 @@ import {
 import styles from './page.module.css';
 
 const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || '';
+const FALLBACK_POLL_INTERVAL_MS = 30000;
 
 // Safe date formatting helper
 function formatDate(dateStr: string | undefined): string {
@@ -99,9 +100,16 @@ export default function Dashboard() {
 
       unsubscribeRef.current = unsubscribe;
 
+      // Fallback polling: periodically refresh data in case real-time listener
+      // misses updates (e.g. due to network issues or listener disconnection)
+      const pollInterval = setInterval(() => {
+        loadTrackersRef.current();
+      }, FALLBACK_POLL_INTERVAL_MS);
+
       return () => {
         unsubscribe();
         unsubscribeRef.current = null;
+        clearInterval(pollInterval);
       };
     }
   }, [router, user, authLoading, isAdmin]);
