@@ -115,13 +115,16 @@ function TrackerContent() {
     }
   }, [trackingId, saveLocationToStorage]);
 
+  // Keep a ref to fetchLocation so the effect always calls the latest version
+  const fetchLocationRef = useRef(fetchLocation);
+  fetchLocationRef.current = fetchLocation;
+
   // Single effect: initialize tracker, then start location tracking
   useEffect(() => {
     if (!trackingId || initializingRef.current) return;
     initializingRef.current = true;
 
     let cancelled = false;
-    let interval: NodeJS.Timeout | null = null;
 
     const initAndTrack = async () => {
       // Step 1: Initialize the tracker
@@ -149,14 +152,13 @@ function TrackerContent() {
       });
 
       // Step 3: Initial location fetch (directly after init, no separate effect)
-      await fetchLocation();
+      await fetchLocationRef.current();
 
       // Step 4: Set up 15-second auto-update interval
       if (!cancelled) {
-        interval = setInterval(() => {
-          fetchLocation(true);
+        intervalRef.current = setInterval(() => {
+          fetchLocationRef.current(true);
         }, 15000);
-        intervalRef.current = interval;
       }
     };
 
@@ -164,14 +166,11 @@ function TrackerContent() {
 
     return () => {
       cancelled = true;
-      if (interval) {
-        clearInterval(interval);
-      }
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trackingId]);
 
   const mapUrl = locationData
