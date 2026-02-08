@@ -102,17 +102,26 @@ export async function getOrCreateTrackerAsync(trackingId: string): Promise<Track
   }
 }
 
-// Add location to a tracker in Firebase
+// Add location to a tracker in Firebase, with localStorage fallback
 export async function addLocationToTrackerAsync(trackingId: string, location: LocationData): Promise<boolean> {
   try {
     return await addLocationToTrackerInFirebase(trackingId, location);
   } catch (error) {
-    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-      console.error('addLocationToTrackerAsync error, falling back to localStorage:', error);
+    // Firebase failed — fall back to localStorage so the data isn't lost
+    if (typeof window !== 'undefined') {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('addLocationToTrackerAsync: Firebase failed, falling back to localStorage:', error);
+      }
+      try {
+        getOrCreateTracker(trackingId);
+        return addLocationToTracker(trackingId, location);
+      } catch (localError) {
+        if (process.env.NODE_ENV === 'development') {
+          console.error('addLocationToTrackerAsync: localStorage fallback also failed:', localError);
+        }
+      }
     }
-    // Ensure the tracker exists in localStorage before adding the location
-    getOrCreateTracker(trackingId);
-    return addLocationToTracker(trackingId, location);
+    return false;
   }
 }
 
