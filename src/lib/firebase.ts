@@ -113,21 +113,5 @@ export function getFirebaseApp(): FirebaseApp | undefined {
   return app;
 }
 
-// Export auth and db with lazy initialization wrappers
-// These will initialize Firebase on first access
-Object.defineProperty(exports, 'auth', {
-  get: function() {
-    return getFirebaseAuth();
-  }
-});
-
-Object.defineProperty(exports, 'db', {
-  get: function() {
-    return getFirebaseDb();
-  }
-});
-
-// Legacy direct exports for backwards compatibility
-// Note: These will be undefined until Firebase is initialized
-export { db, auth };
-export default getFirebaseApp();
+// Export the getter function as default (lazy initialization)
+export default getFirebaseApp;
