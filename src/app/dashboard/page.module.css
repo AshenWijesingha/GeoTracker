@@ -519,3 +519,11 @@
   gap: 10px;
   margin-bottom: 12px;
 }
+
+.awaitingData {
+  color: #888;
+  font-size: 13px;
+  font-family: 'Share Tech Mono', monospace;
+  padding: 10px 0;
+  letter-spacing: 0.5px;
+}
