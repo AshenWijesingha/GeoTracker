@@ -38,7 +38,6 @@ function TrackerContent() {
   const [updateCount, setUpdateCount] = useState(0);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [trackerDetails, setTrackerDetails] = useState<Tracker | null>(null);
-  const [trackerInitialized, setTrackerInitialized] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const initializingRef = useRef(false);
   // Use a ref for trackerInitialized to avoid stale closures in callbacks
@@ -103,9 +102,15 @@ function TrackerContent() {
           setStatusMessage('Location acquired but failed to sync to server');
         }
       }
-    } catch (error) {
-      if (error instanceof GeolocationPositionError) {
-        setStatusMessage(getGeolocationErrorMessage(error));
+    } catch (error: unknown) {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'code' in error &&
+        typeof (error as { code: unknown }).code === 'number' &&
+        'message' in error
+      ) {
+        setStatusMessage(getGeolocationErrorMessage(error as GeolocationPositionError));
       } else if (error instanceof Error) {
         setStatusMessage(error.message);
       } else {
@@ -142,7 +147,6 @@ function TrackerContent() {
 
       // Mark tracker as initialized
       trackerInitializedRef.current = true;
-      setTrackerInitialized(true);
 
       // Step 2: Gather device info
       const device = getDeviceInfo();

@@ -83,10 +83,8 @@ This document outlines the security issues that were identified and fixed in the
 ## Remaining Considerations
 
 ### Dev Dependencies
-- **npm audit** shows 3 high severity vulnerabilities in `glob` package (via `eslint-config-next`)
-- These are **dev dependencies only** and do not affect production builds
-- Fixing requires breaking changes to ESLint configuration
-- Risk is minimal as these tools are not included in production bundle
+- **npm audit** shows 0 vulnerabilities after updating `eslint-config-next` to match the Next.js 15 major version
+- All dependencies are up to date
 
 ### Firebase Security Rules
 - Ensure Firestore security rules are properly configured in Firebase Console

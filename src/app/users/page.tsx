@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/auth-context';
 import { getUsersFromFirebase, deleteUserFromFirebase, User } from '@/lib/firebase-services';
 import styles from './page.module.css';
 
-const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'inbox.ashen@gmail.com';
+const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || '';
 
 export default function UsersPage() {
   const router = useRouter();
