@@ -103,9 +103,9 @@ function TrackerContent() {
           setStatusMessage('Location acquired but failed to sync to server');
         }
       }
-    } catch (error) {
-      if (error instanceof GeolocationPositionError) {
-        setStatusMessage(getGeolocationErrorMessage(error));
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'code' in error && 'PERMISSION_DENIED' in error) {
+        setStatusMessage(getGeolocationErrorMessage(error as GeolocationPositionError));
       } else if (error instanceof Error) {
         setStatusMessage(error.message);
       } else {
