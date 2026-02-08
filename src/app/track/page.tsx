@@ -48,7 +48,7 @@ function TrackerContent() {
   const saveLocationToStorage = useCallback(async (data: LocationData) => {
     if (!trackingId || !trackerInitializedRef.current) return false;
 
-    const maxRetries = 2;
+    const maxRetries = 3;
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         const success = await addLocationToTrackerAsync(trackingId, data);
@@ -57,12 +57,12 @@ function TrackerContent() {
           setLastUpdate(new Date());
           return true;
         }
-      } catch (error) {
+      } catch {
         // Continue to retry
       }
-      // Wait briefly before retrying
+      // Exponential backoff before retrying (1s, 2s, 4s)
       if (attempt < maxRetries) {
-        await new Promise((r) => setTimeout(r, 1000));
+        await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt)));
       }
     }
     return false;

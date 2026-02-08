@@ -16,6 +16,7 @@ import {
   serverTimestamp,
   arrayUnion,
   Unsubscribe,
+  FirestoreError,
 } from 'firebase/firestore';
 import { getFirebaseDb } from './firebase';
 import type { DeviceInfo, LocationData, Tracker } from './storage';
@@ -272,35 +273,35 @@ function sanitizeForFirestore(obj: Record<string, unknown>): Record<string, unkn
 
 // Add location to tracker (atomically appends to locations array)
 export async function addLocationToTrackerInFirebase(trackingId: string, location: LocationData): Promise<boolean> {
+  const db = getFirebaseDb();
+  const trackerRef = doc(db, TRACKERS_COLLECTION, trackingId);
+
+  // Sanitize location data to remove undefined values (Firestore rejects undefined)
+  const sanitizedLocation = sanitizeForFirestore({ ...location });
+
+  // First, try atomic append with updateDoc (fastest path when document exists)
   try {
-    const db = getFirebaseDb();
-    const trackerRef = doc(db, TRACKERS_COLLECTION, trackingId);
-
-    // Check if the tracker document exists
-    const trackerSnap = await getDoc(trackerRef);
-    if (!trackerSnap.exists()) {
-      // Create the tracker if it doesn't exist
-      const created = await createTrackerInFirebase('Shared Tracker', trackingId);
-      if (!created) {
-        return false;
-      }
-    }
-
-    // Sanitize location data to remove undefined values (Firestore rejects undefined)
-    const sanitizedLocation = sanitizeForFirestore({ ...location });
-
-    // Use arrayUnion for atomic append — avoids reading the entire locations
-    // array first, preventing race conditions and reducing write payload size
     await updateDoc(trackerRef, {
       locations: arrayUnion(sanitizedLocation),
     });
     return true;
-  } catch (error) {
-    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-      console.error('Error adding location to tracker:', trackingId, error);
+  } catch (updateError: unknown) {
+    // If the document doesn't exist, updateDoc throws a "not-found" error.
+    // In that case, fall through to create the document with the location included.
+    if (!(updateError instanceof FirestoreError && updateError.code === 'not-found')) {
+      // Re-throw unexpected errors so the caller can handle them
+      throw updateError;
     }
-    return false;
   }
+
+  // Document doesn't exist yet — create it with the location already included
+  // Using setDoc (not updateDoc) so the document is created atomically with data
+  await setDoc(trackerRef, {
+    name: 'Shared Tracker',
+    created: serverTimestamp(),
+    locations: [sanitizedLocation],
+  });
+  return true;
 }
 
 // Delete a tracker
