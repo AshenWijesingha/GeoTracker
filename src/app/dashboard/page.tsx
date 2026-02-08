@@ -12,7 +12,7 @@ import {
 } from '@/lib/storage';
 import styles from './page.module.css';
 
-const ADMIN_EMAIL = 'inbox.ashen@gmail.com';
+const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || '';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -23,8 +23,16 @@ export default function Dashboard() {
   const [expandedTracker, setExpandedTracker] = useState<string | null>(null);
   const [baseUrl, setBaseUrl] = useState('');
   const [loading, setLoading] = useState(true);
+  const [statusMessage, setStatusMessage] = useState('');
+  const [isError, setIsError] = useState(false);
 
   const isAdmin = user?.email === ADMIN_EMAIL;
+
+  const showMessage = (message: string, error = false) => {
+    setStatusMessage(message);
+    setIsError(error);
+    setTimeout(() => setStatusMessage(''), 3000);
+  };
 
   const loadTrackers = useCallback(async () => {
     if (!user) return;
@@ -34,8 +42,6 @@ export default function Dashboard() {
         ? await getTrackersAsync()
         : await getTrackersAsync(user.uid);
       setTrackers(storedTrackers);
-    } catch (error) {
-      console.error('Error loading trackers:', error);
     } finally {
       setLoading(false);
     }
@@ -59,31 +65,79 @@ export default function Dashboard() {
   }, [router, loadTrackers, user, authLoading]);
 
   const handleCreateTracker = async () => {
-    if (!trackerName.trim()) {
-      alert('Please enter a tracker designation');
+    const trimmedName = trackerName.trim();
+    
+    if (!trimmedName) {
+      showMessage('Please enter a tracker designation', true);
+      return;
+    }
+
+    // Validate tracker name length
+    if (trimmedName.length < 3) {
+      showMessage('Tracker name must be at least 3 characters', true);
+      return;
+    }
+
+    if (trimmedName.length > 50) {
+      showMessage('Tracker name must be less than 50 characters', true);
+      return;
+    }
+
+    // Comprehensive sanitization: only allow alphanumeric, spaces, hyphens, underscores
+    // Remove any potentially dangerous characters
+    const sanitizedName = trimmedName
+      .replace(/[<>\"'`&;(){}[\]\\|]/g, '') // Remove HTML/script injection characters
+      .replace(/[\x00-\x1F\x7F]/g, '') // Remove control characters
+      .replace(/\s+/g, ' ') // Normalize multiple spaces to single space
+      .trim();
+    
+    if (sanitizedName !== trimmedName) {
+      showMessage('Tracker name contains invalid characters. Only letters, numbers, spaces, hyphens, and underscores are allowed.', true);
+      return;
+    }
+
+    if (!sanitizedName) {
+      showMessage('Tracker name is invalid after sanitization', true);
       return;
     }
 
     if (!user) {
-      alert('You must be signed in to create a tracker.');
+      showMessage('You must be signed in to create a tracker.', true);
       return;
     }
 
-    const tracker = await createTrackerAsync(trackerName, user.uid);
+    const tracker = await createTrackerAsync(sanitizedName, user.uid);
     if (tracker) {
       const url = `${baseUrl}/track?id=${tracker.id}`;
       setGeneratedUrl(url);
       setTrackerName('');
       loadTrackers();
+      showMessage('Tracker created successfully!');
     } else {
-      alert('Failed to create tracker. Please try again.');
+      showMessage('Failed to create tracker. Please try again.', true);
     }
   };
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(generatedUrl).then(() => {
-      alert('Tracking link copied to clipboard!');
-    });
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(generatedUrl);
+      showMessage('Tracking link copied to clipboard!');
+    } catch (error) {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = generatedUrl;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        showMessage('Tracking link copied to clipboard!');
+      } catch (err) {
+        showMessage('Failed to copy link. Please copy manually.', true);
+      }
+      document.body.removeChild(textArea);
+    }
   };
 
   const handleDeleteTracker = async (trackerId: string, e: React.MouseEvent) => {
@@ -101,13 +155,14 @@ export default function Dashboard() {
       await logout();
       router.push('/login');
     } catch (error) {
-      console.error('Logout error:', error);
+      showMessage('Failed to logout. Please try again.', true);
     }
   };
 
   const viewOnMap = (lat: number, lng: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    window.open(`https://www.google.com/maps?q=${lat},${lng}&z=15`, '_blank');
+    const params = new URLSearchParams({ q: `${lat},${lng}`, z: '15' });
+    window.open(`https://www.google.com/maps?${params.toString()}`, '_blank');
   };
 
   const toggleTrackerDetails = (trackerId: string) => {
@@ -149,6 +204,12 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {statusMessage && (
+        <div className={`${styles.statusMessage} ${isError ? styles.error : styles.success}`}>
+          {statusMessage}
+        </div>
+      )}
+
       <div className={styles.createTracker}>
         <h2>Initialize New Tracker</h2>
         <div className={styles.formGroup}>
@@ -160,9 +221,20 @@ export default function Dashboard() {
             onChange={(e) => setTrackerName(e.target.value)}
             placeholder="e.g., Operation Alpha, Asset Monitor, Field Unit"
             className={styles.input}
+            aria-label="Tracker name input"
+            aria-describedby="trackerNameHelp"
+            maxLength={50}
+            minLength={3}
           />
+          <small id="trackerNameHelp" className={styles.helpText}>
+            Enter a name between 3-50 characters
+          </small>
         </div>
-        <button className="btn" onClick={handleCreateTracker}>
+        <button 
+          className="btn" 
+          onClick={handleCreateTracker}
+          aria-label="Generate tracking link button"
+        >
           Generate Tracking Link
         </button>
 
@@ -171,7 +243,7 @@ export default function Dashboard() {
             <h3>✓ Tracking Link Generated</h3>
             <p>Share this secure link to begin surveillance (auto-updates every 15s):</p>
             <div className={styles.linkText}>{generatedUrl}</div>
-            <button className="btn btn-secondary" onClick={handleCopyLink}>
+            <button className="btn btn-secondary" onClick={handleCopyLink} aria-label="Copy tracking link to clipboard">
               📋 Copy Link
             </button>
           </div>

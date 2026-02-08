@@ -39,15 +39,22 @@ cd GeoTracker
 npm install
 ```
 
-3. **Start the development server**
+3. **Configure environment variables**
+```bash
+cp .env.local.example .env.local
+```
+
+Edit `.env.local` and set your Firebase configuration values. The example file includes default values for the geotracker-865d3 project. See [Configuration](#-configuration) section below for more details.
+
+4. **Start the development server**
 ```bash
 npm run dev
 ```
 
-4. **Open your browser**
+5. **Open your browser**
 Navigate to `http://localhost:3000`
 
-5. **Login or Sign Up**
+6. **Login or Sign Up**
 - Create a new account with email/password
 - Or continue as a guest for quick access
 
@@ -56,6 +63,32 @@ Navigate to `http://localhost:3000`
 ```bash
 npm run build
 ```
+
+## 🔧 Configuration
+
+### Required Environment Variables
+
+The application requires Firebase configuration via environment variables. Copy `.env.local.example` to `.env.local` and update the values:
+
+```bash
+# Firebase Configuration (Required)
+NEXT_PUBLIC_FIREBASE_API_KEY=your-api-key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project.firebasestorage.app
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+NEXT_PUBLIC_FIREBASE_APP_ID=your-app-id
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your-measurement-id
+
+# Admin Email (Optional)
+NEXT_PUBLIC_ADMIN_EMAIL=your-admin@email.com
+```
+
+**Important Notes:**
+- Without proper Firebase configuration, the application will not work
+- Get these values from [Firebase Console](https://console.firebase.google.com/) > Project Settings > General
+- The `.env.local.example` file contains default values for quick setup
+- Never commit your `.env.local` file to version control
 
 ## 🌐 Deployment Options
 
