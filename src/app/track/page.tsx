@@ -140,11 +140,11 @@ function TrackerContent() {
           setTrackerDetails(tracker);
         }
       } catch (error) {
-        if (!cancelled) {
-          setStatus('error');
-          setStatusMessage('Failed to initialize tracking session. Please check your connection and try again.');
+        // Log but don't abort — addLocationToTrackerInFirebase can create the
+        // document on the fly, so we can still proceed with location tracking.
+        if (!cancelled && typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+          console.error('Tracker init failed, proceeding with location tracking:', error);
         }
-        return;
       }
 
       if (cancelled) return;
