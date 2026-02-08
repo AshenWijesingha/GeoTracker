@@ -12,7 +12,18 @@ export const FIREBASE_SETUP_MESSAGE =
 // Firebase configuration
 // These values can be provided via environment variables or use the defaults below.
 // The default configuration is for the geotracker-865d3 Firebase project.
-// See .env.local.example for setup instructions.
+// 
+// SECURITY NOTE: Firebase client credentials (API keys, project IDs) are designed 
+// to be public and safe to include in client-side code. They are not secrets.
+// Security is enforced through:
+//   - Firestore security rules (configured in Firebase Console)
+//   - Firebase Authentication settings
+//   - Domain restrictions (optional, configured in Google Cloud Console)
+// 
+// Reference: https://firebase.google.com/docs/projects/api-keys
+// See FIREBASE_SETUP.md for detailed security information and setup instructions.
+//
+// To use a custom Firebase project, set environment variables in .env.local
 function getFirebaseConfig() {
   return {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyDIHDGN0nAx1CpLCurSQj3TYlR1AwZmu6g",
