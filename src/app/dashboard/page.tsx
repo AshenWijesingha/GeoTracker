@@ -359,6 +359,9 @@ export default function Dashboard() {
             <Link href="/tracker" className={styles.navLink}>
               📡 Quick Track
             </Link>
+            <Link href="/analytics" className={styles.navLink} aria-label="Analytics">
+              📊 Analytics
+            </Link>
             <Link href="/users" className={styles.navLink}>
               👥 Users
             </Link>
