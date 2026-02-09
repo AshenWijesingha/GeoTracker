@@ -362,6 +362,9 @@ export default function Dashboard() {
             <Link href="/users" className={styles.navLink}>
               👥 Users
             </Link>
+            <Link href="/settings" className={styles.navLink}>
+              ⚙️ Settings
+            </Link>
             <button onClick={handleLogout} className={styles.logoutBtn}>
               ⏻ Disconnect
             </button>
