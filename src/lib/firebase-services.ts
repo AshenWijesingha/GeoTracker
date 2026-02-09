@@ -332,10 +332,12 @@ export async function addLocationToTrackerInFirebase(trackingId: string, locatio
   const sanitizedLocation = sanitizeForFirestore({ ...location });
 
   try {
-    // Ensure the parent tracker document exists (merge to avoid overwriting
-    // existing fields like name or userId).
+    // Ensure the parent tracker document exists.  Use merge so we don't
+    // overwrite fields like name or userId that may already be set. Only set
+    // the name for a brand-new document; the merge will leave the field
+    // untouched if it already exists.
     const trackerRef = doc(db, TRACKERS_COLLECTION, trackingId);
-    await setDoc(trackerRef, { created: serverTimestamp() }, { merge: true });
+    await setDoc(trackerRef, { name: 'Shared Tracker' }, { merge: true });
 
     // Add location as a new document in the sub-collection
     const locationsRef = collection(db, TRACKERS_COLLECTION, trackingId, LOCATIONS_SUBCOLLECTION);
@@ -562,12 +564,13 @@ export function subscribeToTrackers(
                 // Fall back to array field for backward compatibility when
                 // the sub-collection is empty but the parent doc has data.
                 if (locations.length === 0) {
-                  const parentData = snapshot.docs.find(d => d.id === id)?.data();
-                  if (parentData && Array.isArray(parentData.locations) && parentData.locations.length > 0) {
-                    trackerLocations.set(id, parseLocationsArray(parentData.locations));
-                    emitUpdate();
-                    return;
-                  }
+                  getDoc(doc(db, TRACKERS_COLLECTION, id)).then(parentSnap => {
+                    const parentData = parentSnap.data();
+                    if (parentData && Array.isArray(parentData.locations) && parentData.locations.length > 0) {
+                      trackerLocations.set(id, parseLocationsArray(parentData.locations));
+                      emitUpdate();
+                    }
+                  }).catch(() => { /* ignore */ });
                 }
 
                 trackerLocations.set(id, locations);
@@ -576,11 +579,15 @@ export function subscribeToTrackers(
               () => {
                 // On error, try reading the parent document's locations array
                 // as a fallback
-                const parentData = snapshot.docs.find(d => d.id === id)?.data();
-                if (parentData && Array.isArray(parentData.locations) && parentData.locations.length > 0) {
-                  trackerLocations.set(id, parseLocationsArray(parentData.locations));
-                }
-                emitUpdate();
+                getDoc(doc(db, TRACKERS_COLLECTION, id)).then(parentSnap => {
+                  const parentData = parentSnap.data();
+                  if (parentData && Array.isArray(parentData.locations) && parentData.locations.length > 0) {
+                    trackerLocations.set(id, parseLocationsArray(parentData.locations));
+                  }
+                  emitUpdate();
+                }).catch(() => {
+                  emitUpdate();
+                });
               }
             );
             locationUnsubscribes.set(id, unsub);
