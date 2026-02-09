@@ -360,7 +360,7 @@ A: **No.** The person being tracked must click the tracking link and grant locat
 A: Accuracy depends on the device and location method (GPS, Wi-Fi, cell towers). Typically 5-50 meters. GPS on modern smartphones can be accurate to within 5 meters.
 
 **Q: Does it work offline?**  
-A: Partially. Location updates require an internet connection to sync to Firebase. There's a LocalStorage fallback, but no full offline PWA support currently.
+A: Partially. Location updates require an internet connection to sync to Firebase. There's a local storage fallback, but no full offline PWA support currently.
 
 **Q: Can I track multiple devices simultaneously?**  
 A: Yes! Create separate trackers for each device you want to monitor.
@@ -371,7 +371,7 @@ A: Yes! Create separate trackers for each device you want to monitor.
 A: Web browsers restrict background activity for security and battery life. For continuous tracking, the tab must remain open. Consider using a PWA (future feature) or native app for true background tracking.
 
 **Q: Can I change the 15-second update interval?**  
-A: Not via the UI currently. The interval is hardcoded in the tracking page. You can modify `src/app/track/page.tsx` to change it.
+A: Not via the UI currently. The interval is hardcoded in the tracking page. You can modify `src/app/track/page.tsx` to change it. **Warning**: Shorter intervals (e.g., 5s) will drain battery faster and increase Firebase usage, while longer intervals (e.g., 60s) may result in less accurate tracking and stale data.
 
 **Q: Does this drain my phone battery?**  
 A: Yes, continuous GPS tracking consumes battery. The 15-second update interval is a balance between accuracy and battery life. More frequent updates = faster battery drain.
@@ -388,7 +388,7 @@ A: Not currently. Google Maps is embedded. Adding Leaflet or Mapbox would requir
 ### Privacy & Legal
 
 **Q: Is this GDPR compliant?**  
-A: The codebase includes basic security measures, but full GDPR compliance requires additional features like data deletion on request, audit logging, and explicit consent mechanisms (currently missing).
+A: The codebase includes basic security measures, but full GDPR compliance requires additional features like data deletion on request, audit logging, and explicit consent mechanisms (currently missing). **Important**: Technical measures alone don't guarantee GDPR compliance. Consult with legal counsel to ensure your implementation meets all regulatory requirements for your jurisdiction and use case.
 
 **Q: Can I use this for commercial purposes?**  
 A: Yes, it's MIT licensed. However, ensure you comply with local laws regarding location tracking and obtain proper consent from users.
