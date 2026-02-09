@@ -80,9 +80,11 @@ export default function GeofencesPage() {
     const rad = parseFloat(radius);
     if (!name.trim() || isNaN(lat) || isNaN(lng) || isNaN(rad) || rad <= 0) return;
 
+    const sanitizedName = name.trim().replace(/[<>"'`&;(){}[\]\\|]/g, '').replace(/[\x00-\x1F\x7F]/g, '');
+
     const geofence: Geofence = {
       id: crypto.randomUUID(),
-      name: name.trim(),
+      name: sanitizedName,
       latitude: lat,
       longitude: lng,
       radius: rad,
@@ -275,8 +277,8 @@ export default function GeofencesPage() {
                   className={styles.mapEmbed}
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
-                  src={`https://maps.google.com/maps?q=${gf.latitude},${gf.longitude}&z=15&output=embed`}
-                  title={`Map for ${gf.name}`}
+                  src={`https://maps.google.com/maps?${new URLSearchParams({ q: `${gf.latitude},${gf.longitude}`, z: '15', output: 'embed' }).toString()}`}
+                  title={`Map for ${gf.name.replace(/[<>"']/g, '')}`}
                 />
               </div>
             ))}

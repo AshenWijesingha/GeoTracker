@@ -69,7 +69,7 @@ export default function SOSPage() {
 
   const getShareText = useCallback(() => {
     if (!location) return '';
-    const mapsUrl = `https://maps.google.com/maps?q=${location.latitude},${location.longitude}`;
+    const mapsUrl = `https://maps.google.com/maps?${new URLSearchParams({ q: `${location.latitude},${location.longitude}` }).toString()}`;
     let text = `EMERGENCY: My location is ${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)} - ${mapsUrl}`;
     if (location.address) {
       text += ` (${location.address})`;
@@ -101,7 +101,7 @@ export default function SOSPage() {
   }, [getShareText]);
 
   const mapsUrl = location
-    ? `https://maps.google.com/maps?q=${location.latitude},${location.longitude}`
+    ? `https://maps.google.com/maps?${new URLSearchParams({ q: `${location.latitude},${location.longitude}` }).toString()}`
     : '';
 
   const embedUrl = location

@@ -39,8 +39,12 @@ function saveNotifications(notifications: AppNotification[]): void {
 export function addNotification(
   notification: Omit<AppNotification, 'id' | 'timestamp' | 'read'>
 ): AppNotification {
+  const sanitizedTitle = notification.title.replace(/<[^>]*>/g, '');
+  const sanitizedMessage = notification.message.replace(/<[^>]*>/g, '');
   const newNotification: AppNotification = {
     ...notification,
+    title: sanitizedTitle,
+    message: sanitizedMessage,
     id: generateId(),
     timestamp: new Date().toISOString(),
     read: false,

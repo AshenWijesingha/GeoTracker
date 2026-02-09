@@ -19,7 +19,14 @@ export function getSettings(): UserSettings {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (!stored) return DEFAULT_SETTINGS;
-    return { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
+    const parsed = JSON.parse(stored);
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      delete parsed.__proto__;
+      delete parsed.constructor;
+      delete parsed.prototype;
+      return { ...DEFAULT_SETTINGS, ...parsed };
+    }
+    return { ...DEFAULT_SETTINGS };
   } catch {
     return DEFAULT_SETTINGS;
   }
