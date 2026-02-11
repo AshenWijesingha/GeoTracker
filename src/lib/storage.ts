@@ -237,30 +237,35 @@ export function getDeviceInfo(): DeviceInfo {
 
   const userAgent = navigator.userAgent;
 
-  // Detect browser
+  // Detect browser - check Edge/Opera before Chrome since they include 'Chrome' in UA
   let browser = 'Unknown';
-  if (userAgent.indexOf('Firefox') > -1) {
+  if (userAgent.indexOf('Edg') > -1) {
+    browser = 'Edge';
+  } else if (userAgent.indexOf('OPR') > -1 || userAgent.indexOf('Opera') > -1) {
+    browser = 'Opera';
+  } else if (userAgent.indexOf('Firefox') > -1) {
     browser = 'Firefox';
-  } else if (userAgent.indexOf('Chrome') > -1) {
+  } else if (userAgent.indexOf('Chrome') > -1 || userAgent.indexOf('CriOS') > -1) {
     browser = 'Chrome';
   } else if (userAgent.indexOf('Safari') > -1) {
     browser = 'Safari';
-  } else if (userAgent.indexOf('Edge') > -1) {
-    browser = 'Edge';
   }
 
-  // Detect OS
+  // Detect OS - check mobile OS before desktop (Android UA contains 'Linux', iOS UA contains 'Mac')
   let os = 'Unknown';
-  if (userAgent.indexOf('Win') > -1) os = 'Windows';
+  if (userAgent.indexOf('Android') > -1) os = 'Android';
+  else if (userAgent.indexOf('iPhone') > -1 || userAgent.indexOf('iPad') > -1 || userAgent.indexOf('iPod') > -1) os = 'iOS';
+  else if (userAgent.indexOf('Win') > -1) os = 'Windows';
   else if (userAgent.indexOf('Mac') > -1) os = 'MacOS';
   else if (userAgent.indexOf('Linux') > -1) os = 'Linux';
-  else if (userAgent.indexOf('Android') > -1) os = 'Android';
-  else if (userAgent.indexOf('iOS') > -1 || userAgent.indexOf('iPhone') > -1) os = 'iOS';
+
+  // Detect if mobile device
+  const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
 
   return {
     browser,
     os,
-    platform: navigator.platform || 'Unknown',
+    platform: navigator.platform || (isMobile ? 'Mobile' : 'Unknown'),
     screen: `${window.screen.width} x ${window.screen.height}`,
     userAgent,
   };

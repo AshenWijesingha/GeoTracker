@@ -165,6 +165,18 @@ export async function getOrCreateTrackerInFirebase(trackingId: string, name: str
       locations: [],
     };
   } catch (error) {
+    // If we get a permission error on read, the tracker likely exists but is owned by
+    // an authenticated user. We can still attempt to add locations via update.
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes('permission') || errorMessage.includes('PERMISSION_DENIED')) {
+      // Return a minimal tracker object so location updates can proceed
+      return {
+        id: trackingId,
+        name,
+        created: new Date().toISOString(),
+        locations: [],
+      };
+    }
     console.error('Error getting or creating tracker:', error);
     throw error;
   }
@@ -172,21 +184,51 @@ export async function getOrCreateTrackerInFirebase(trackingId: string, name: str
 
 // Add location to a tracker
 export async function addLocationToTrackerInFirebase(trackingId: string, location: LocationData): Promise<boolean> {
+  // Sanitize location data to ensure all fields are defined (Firestore rejects undefined values)
+  const sanitizedLocation: Record<string, unknown> = {
+    latitude: location.latitude,
+    longitude: location.longitude,
+    accuracy: location.accuracy,
+    timestamp: location.timestamp,
+  };
+
+  if (location.deviceInfo) {
+    sanitizedLocation.deviceInfo = {
+      browser: location.deviceInfo.browser || 'Unknown',
+      os: location.deviceInfo.os || 'Unknown',
+      platform: location.deviceInfo.platform || 'Unknown',
+      screen: location.deviceInfo.screen || 'Unknown',
+      userAgent: location.deviceInfo.userAgent || 'Unknown',
+    };
+  }
+
+  if (location.ip) {
+    sanitizedLocation.ip = location.ip;
+  }
+
+  const trackerRef = doc(db, TRACKERS_COLLECTION, trackingId);
+
   try {
-    // First ensure the tracker exists
-    const tracker = await getTrackerFromFirebase(trackingId);
-    if (!tracker) {
-      // Create the tracker if it doesn't exist
-      await setDoc(doc(db, TRACKERS_COLLECTION, trackingId), createTrackerData('Shared Tracker'));
-    }
-    
-    const trackerRef = doc(db, TRACKERS_COLLECTION, trackingId);
+    // Try to update the existing tracker directly
     await updateDoc(trackerRef, {
-      locations: arrayUnion(location),
+      locations: arrayUnion(sanitizedLocation),
       updatedAt: serverTimestamp(),
     });
     return true;
   } catch (error) {
+    // If the document doesn't exist, create it with the location data
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes('No document to update') || errorMessage.includes('NOT_FOUND')) {
+      try {
+        const data = createTrackerData('Shared Tracker');
+        data.locations = [sanitizedLocation];
+        await setDoc(trackerRef, data);
+        return true;
+      } catch (createError) {
+        console.error('Error creating tracker with location:', createError);
+        throw createError;
+      }
+    }
     console.error('Error adding location:', error);
     throw error;
   }
