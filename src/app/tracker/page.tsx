@@ -158,7 +158,7 @@ export default function StandaloneTracker() {
         <h1>🎯 Cyber Tracker</h1>
         <p className={styles.subtitle}>Standalone surveillance module</p>
 
-        <div className={styles.trackerInfo || ''}>
+        <div className={styles.trackerInfo}>
           <p>📡 Location data is being synced to Firebase</p>
           {updateCount > 0 && (
             <p>✓ {updateCount} location update{updateCount !== 1 ? 's' : ''} synced

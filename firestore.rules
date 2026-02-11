@@ -9,23 +9,20 @@ service cloud.firestore {
     
     // Trackers collection
     match /trackers/{trackerId} {
-      // Allow reading if user owns the tracker OR if the tracker has no userId (shared tracker)
+      // Authenticated user owns the tracker
       allow read: if request.auth != null && 
                      resource.data.userId == request.auth.uid;
       
-      // Allow creating if user sets themselves as owner
       allow create: if request.auth != null && 
                       request.resource.data.userId == request.auth.uid;
       
-      // Allow updating/deleting if user owns the tracker
       allow update, delete: if request.auth != null && 
                               resource.data.userId == request.auth.uid;
 
-      // Allow unauthenticated access for shared trackers (no userId field)
-      // Shared trackers can be read, created, and updated by anyone with the link
-      allow read: if resource.data.userId == null || !('userId' in resource.data);
+      // Shared trackers (no userId field) - accessible by anyone with the link
+      // This enables mobile devices and incognito browsers to sync location data
+      allow read, update: if !('userId' in resource.data);
       allow create: if !('userId' in request.resource.data);
-      allow update: if resource.data.userId == null || !('userId' in resource.data);
     }
     
     // Location updates subcollection
