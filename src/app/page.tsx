@@ -2,18 +2,14 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/auth-context';
 
 export default function Home() {
   const router = useRouter();
-  const { user, loading } = useAuth();
 
   useEffect(() => {
-    if (!loading) {
-      // Redirect to dashboard if already signed in, otherwise to login
-      router.push(user ? '/dashboard' : '/login');
-    }
-  }, [router, user, loading]);
+    // Redirect to login page
+    router.push('/login');
+  }, [router]);
 
   return (
     <div style={{ 

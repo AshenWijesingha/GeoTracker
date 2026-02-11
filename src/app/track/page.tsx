@@ -4,14 +4,13 @@ import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
-  Tracker,
   DeviceInfo,
-  getEnhancedDeviceInfo,
+  getDeviceInfo,
   getIPAddress,
   getCurrentPosition,
   getGeolocationErrorMessage,
-  getOrCreateTrackerAsync,
-  addLocationToTrackerAsync,
+  getOrCreateTracker,
+  addLocationToTracker,
 } from '@/lib/storage';
 import styles from './page.module.css';
 
@@ -37,42 +36,25 @@ function TrackerContent() {
   const [ipAddress, setIpAddress] = useState('Scanning...');
   const [updateCount, setUpdateCount] = useState(0);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
-  const [trackerDetails, setTrackerDetails] = useState<Tracker | null>(null);
+  const [trackerInitialized, setTrackerInitialized] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const initializingRef = useRef(false);
-  // Use a ref for trackerInitialized to avoid stale closures in callbacks
-  const trackerInitializedRef = useRef(false);
 
-  // Save location data to Firebase, with retry on failure
-  const saveLocationToStorage = useCallback(async (data: LocationData) => {
-    if (!trackingId || !trackerInitializedRef.current) return false;
+  // Initialize tracker if needed and save location
+  const saveLocationToStorage = useCallback((data: LocationData) => {
+    if (!trackingId) return false;
 
-    const maxRetries = 3;
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
-      try {
-        const success = await addLocationToTrackerAsync(trackingId, data);
-        if (success) {
-          setUpdateCount((prev) => prev + 1);
-          setLastUpdate(new Date());
-          return true;
-        }
-      } catch {
-        // Continue to retry
-      }
-      // Exponential backoff before retrying (1s, 2s, 4s)
-      if (attempt < maxRetries) {
-        await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt)));
-      }
+    // Ensure tracker exists (creates if not)
+    getOrCreateTracker(trackingId);
+    
+    const success = addLocationToTracker(trackingId, data);
+    if (success) {
+      setUpdateCount((prev) => prev + 1);
+      setLastUpdate(new Date());
     }
-    return false;
+    return success;
   }, [trackingId]);
 
-  // Cache the IP address so we don't hit the external API on every 15s update
-  const cachedIpRef = useRef<string | null>(null);
-
   const fetchLocation = useCallback(async (isAutoUpdate = false) => {
-    if (!trackerInitializedRef.current) return;
-
     if (!isAutoUpdate) {
       setStatus('loading');
       setStatusMessage('Acquiring target coordinates...');
@@ -80,17 +62,8 @@ function TrackerContent() {
 
     try {
       const position = await getCurrentPosition();
-      const device = await getEnhancedDeviceInfo();
-
-      // Only fetch IP on the first successful call; reuse the cached value for auto-updates
-      let ip = cachedIpRef.current || '';
-      if (!cachedIpRef.current) {
-        const fetchedIp = await getIPAddress();
-        if (fetchedIp && fetchedIp !== 'Unable to fetch') {
-          cachedIpRef.current = fetchedIp;
-        }
-        ip = fetchedIp;
-      }
+      const device = getDeviceInfo();
+      const ip = await getIPAddress();
 
       const data: LocationData = {
         latitude: position.coords.latitude,
@@ -107,22 +80,13 @@ function TrackerContent() {
       setStatus('success');
       setStatusMessage('Target location acquired');
 
-      // Save to Firebase
+      // Save to localStorage
       if (trackingId) {
-        const saved = await saveLocationToStorage(data);
-        if (!saved) {
-          setStatusMessage('Location acquired but failed to sync to server');
-        }
+        saveLocationToStorage(data);
       }
-    } catch (error: unknown) {
-      if (
-        error &&
-        typeof error === 'object' &&
-        'code' in error &&
-        typeof (error as { code: unknown }).code === 'number' &&
-        'message' in error
-      ) {
-        setStatusMessage(getGeolocationErrorMessage(error as GeolocationPositionError));
+    } catch (error) {
+      if (error instanceof GeolocationPositionError) {
+        setStatusMessage(getGeolocationErrorMessage(error));
       } else if (error instanceof Error) {
         setStatusMessage(error.message);
       } else {
@@ -132,93 +96,40 @@ function TrackerContent() {
     }
   }, [trackingId, saveLocationToStorage]);
 
-  // Keep a ref to fetchLocation so the effect always calls the latest version
-  const fetchLocationRef = useRef(fetchLocation);
-  fetchLocationRef.current = fetchLocation;
-
-  // Single effect: initialize tracker, then start location tracking
+  // Initialize tracker
   useEffect(() => {
-    if (!trackingId || initializingRef.current) return;
-    initializingRef.current = true;
+    if (trackingId && !trackerInitialized) {
+      // Auto-create tracker if it doesn't exist
+      getOrCreateTracker(trackingId);
+      setTrackerInitialized(true);
+    }
+  }, [trackingId, trackerInitialized]);
 
-    let cancelled = false;
+  useEffect(() => {
+    const device = getDeviceInfo();
+    setDeviceInfo(device);
+    getIPAddress().then(setIpAddress);
 
-    const initAndTrack = async () => {
-      // Step 1: Initialize the tracker
-      try {
-        const tracker = await getOrCreateTrackerAsync(trackingId);
-        if (cancelled) return;
-        if (tracker) {
-          setTrackerDetails(tracker);
-        }
-      } catch (error) {
-        // Log but don't abort — addLocationToTrackerInFirebase can create the
-        // document on the fly, so we can still proceed with location tracking.
-        if (!cancelled && typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-          console.error('Tracker init failed, proceeding with location tracking:', error);
-        }
-      }
+    // Initial location fetch
+    fetchLocation();
 
-      if (cancelled) return;
-
-      // Mark tracker as initialized
-      trackerInitializedRef.current = true;
-
-      // Step 2: Gather device info
-      const device = await getEnhancedDeviceInfo();
-      setDeviceInfo(device);
-      getIPAddress().then((ip) => {
-        if (!cancelled) setIpAddress(ip);
-      });
-
-      // Step 3: Initial location fetch (directly after init, no separate effect)
-      await fetchLocationRef.current();
-
-      // Step 4: Set up 15-second auto-update interval
-      if (!cancelled) {
-        intervalRef.current = setInterval(() => {
-          fetchLocationRef.current(true);
-        }, 15000);
-      }
-    };
-
-    initAndTrack();
+    // Set up 15-second auto-update interval
+    if (trackingId) {
+      intervalRef.current = setInterval(() => {
+        fetchLocation(true);
+      }, 15000); // 15 seconds
+    }
 
     return () => {
-      cancelled = true;
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
-        intervalRef.current = null;
       }
     };
-  }, [trackingId]);
+  }, [trackingId, fetchLocation]);
 
   const mapUrl = locationData
-    ? (() => {
-        const params = new URLSearchParams({
-          q: `${locationData.latitude},${locationData.longitude}`,
-          z: '15',
-          output: 'embed'
-        });
-        return `https://maps.google.com/maps?${params.toString()}`;
-      })()
+    ? `https://maps.google.com/maps?q=${locationData.latitude},${locationData.longitude}&z=15&output=embed`
     : '';
-
-  if (!trackingId) {
-    return (
-      <div className={styles.gradientBg}>
-        <div className={styles.container}>
-          <h1>🎯 Cyber Tracker</h1>
-          <div className={`status error`}>
-            ✗ No tracking session ID provided. Please use a valid tracking link.
-          </div>
-          <Link href="/login" className={styles.backLink}>
-            ← Return to Command Center
-          </Link>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className={styles.gradientBg}>
@@ -228,16 +139,8 @@ function TrackerContent() {
 
         {trackingId && (
           <div className={styles.trackerInfo}>
-            {trackerDetails ? (
-              <>
-                <p>📋 <strong>Tracker:</strong> {trackerDetails.name}</p>
-                <p>🕐 <strong>Created:</strong> {new Date(trackerDetails.created).toLocaleString()}</p>
-                <p>🔗 <strong>Session ID:</strong> {trackingId.substring(0, 20)}...</p>
-              </>
-            ) : (
-              <p>🔗 <strong>Session ID:</strong> {trackingId.substring(0, 20)}...</p>
-            )}
-            <p>📡 Location data is being recorded</p>
+            <p>🔗 <strong>Active Session:</strong> {trackingId.substring(0, 20)}...</p>
+            <p>📡 Location data is being recorded to this session</p>
           </div>
         )}
 
@@ -334,20 +237,6 @@ function TrackerContent() {
                       {deviceInfo.userAgent}
                     </span>
                   </div>
-                  {deviceInfo.batteryLevel !== undefined && (
-                    <div className="device-item">
-                      <span className="device-label">Battery:</span>
-                      <span className="device-value">
-                        {deviceInfo.batteryLevel}% {deviceInfo.batteryCharging ? '⚡ Charging' : '🔋'}
-                      </span>
-                    </div>
-                  )}
-                  {deviceInfo.connectionType && (
-                    <div className="device-item">
-                      <span className="device-label">Connection:</span>
-                      <span className="device-value">{deviceInfo.connectionType.toUpperCase()}</span>
-                    </div>
-                  )}
                 </div>
               </div>
             )}
@@ -356,10 +245,6 @@ function TrackerContent() {
 
         <Link href="/login" className={styles.backLink}>
           ← Return to Command Center
-        </Link>
-
-        <Link href="/sos" className={styles.sosLink}>
-          🆘 Emergency SOS
         </Link>
       </div>
     </div>

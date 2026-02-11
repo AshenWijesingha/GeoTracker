@@ -1,16 +1,5 @@
 // Storage utility for client-side data persistence
-// Uses Firebase Firestore as the primary backend with localStorage fallback
-
-import {
-  getTrackersFromFirebase,
-  getTrackerFromFirebase,
-  createTrackerInFirebase,
-  getOrCreateTrackerInFirebase,
-  addLocationToTrackerInFirebase,
-  deleteTrackerFromFirebase,
-  subscribeToTrackers,
-} from './firebase-services';
-import type { Unsubscribe } from './firebase-services';
+// Uses localStorage for GitHub Pages compatibility (no backend needed)
 
 export interface DeviceInfo {
   browser: string;
@@ -18,11 +7,6 @@ export interface DeviceInfo {
   platform: string;
   screen: string;
   userAgent: string;
-  batteryLevel?: number;
-  batteryCharging?: boolean;
-  connectionType?: string;
-  heading?: number;
-  motionState?: string;
 }
 
 export interface LocationData {
@@ -39,7 +23,6 @@ export interface Tracker {
   name: string;
   created: string;
   locations: LocationData[];
-  userId?: string | null;
 }
 
 const STORAGE_KEY = 'geotracker_data';
@@ -52,108 +35,6 @@ export function generateTrackingId(): string {
   // Fallback for older browsers
   return 'track_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11);
 }
-
-// ==========================================
-// Firebase-based async functions (primary)
-// ==========================================
-
-// Get all trackers from Firebase (filtered by userId if provided)
-export async function getTrackersAsync(userId?: string): Promise<Tracker[]> {
-  try {
-    return await getTrackersFromFirebase(userId);
-  } catch (error) {
-    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-      console.error('getTrackersAsync error, falling back to localStorage:', error);
-    }
-    return getTrackers();
-  }
-}
-
-// Get a specific tracker by ID from Firebase
-export async function getTrackerAsync(trackingId: string): Promise<Tracker | null> {
-  try {
-    return await getTrackerFromFirebase(trackingId);
-  } catch (error) {
-    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-      console.error('getTrackerAsync error, falling back to localStorage:', error);
-    }
-    return getTracker(trackingId) || null;
-  }
-}
-
-// Create a new tracker in Firebase
-export async function createTrackerAsync(name: string, userId?: string): Promise<Tracker | null> {
-  const trackerId = generateTrackingId();
-  try {
-    const tracker = await createTrackerInFirebase(name, trackerId, userId);
-    return tracker;
-  } catch (error) {
-    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-      console.error('createTrackerAsync error, falling back to localStorage:', error);
-    }
-    return createTracker(name, userId);
-  }
-}
-
-// Get or create a tracker by ID in Firebase (for shared links)
-export async function getOrCreateTrackerAsync(trackingId: string): Promise<Tracker | null> {
-  try {
-    return await getOrCreateTrackerInFirebase(trackingId);
-  } catch (error) {
-    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-      console.error('getOrCreateTrackerAsync error, falling back to localStorage:', error);
-    }
-    return getOrCreateTracker(trackingId);
-  }
-}
-
-// Add location to a tracker in Firebase, with localStorage fallback
-export async function addLocationToTrackerAsync(trackingId: string, location: LocationData): Promise<boolean> {
-  try {
-    return await addLocationToTrackerInFirebase(trackingId, location);
-  } catch (error) {
-    // Firebase failed — fall back to localStorage so the data isn't lost
-    if (typeof window !== 'undefined') {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('addLocationToTrackerAsync: Firebase failed, falling back to localStorage:', error);
-      }
-      try {
-        getOrCreateTracker(trackingId);
-        return addLocationToTracker(trackingId, location);
-      } catch (localError) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error('addLocationToTrackerAsync: localStorage fallback also failed:', localError);
-        }
-      }
-    }
-    return false;
-  }
-}
-
-// Delete a tracker from Firebase
-export async function deleteTrackerAsync(trackingId: string): Promise<boolean> {
-  try {
-    return await deleteTrackerFromFirebase(trackingId);
-  } catch (error) {
-    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-      console.error('deleteTrackerAsync error, falling back to localStorage:', error);
-    }
-    return deleteTracker(trackingId);
-  }
-}
-
-// Subscribe to real-time tracker updates from Firebase
-export function subscribeToTrackersRealtime(
-  onUpdate: (trackers: Tracker[]) => void,
-  onError: (error: Error) => void,
-  userId?: string
-): Unsubscribe {
-  return subscribeToTrackers(onUpdate, onError, userId);
-}
-
-// ==========================================
-// LocalStorage-based sync functions (fallback)
-// ==========================================
 
 // Get all trackers from localStorage
 export function getTrackers(): Tracker[] {
@@ -174,17 +55,17 @@ export function saveTrackers(trackers: Tracker[]): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(trackers));
   } catch (error) {
+    console.error('Error saving trackers to localStorage:', error);
   }
 }
 
 // Create a new tracker
-export function createTracker(name: string, userId?: string): Tracker {
+export function createTracker(name: string): Tracker {
   const tracker: Tracker = {
     id: generateTrackingId(),
     name: name || 'Unnamed Tracker',
     created: new Date().toISOString(),
     locations: [],
-    userId: userId || null,
   };
 
   const trackers = getTrackers();
@@ -225,14 +106,13 @@ export function getOrCreateTracker(trackingId: string): Tracker {
   return tracker;
 }
 
-// Add location to tracker (appends to locations array)
+// Add location to a tracker
 export function addLocationToTracker(trackingId: string, location: LocationData): boolean {
   const trackers = getTrackers();
   const tracker = trackers.find(t => t.id === trackingId);
 
   if (tracker) {
-    // Append new location to the beginning of the array (most recent first)
-    tracker.locations = [location, ...tracker.locations];
+    tracker.locations.push(location);
     saveTrackers(trackers);
     return true;
   }
@@ -268,39 +148,25 @@ export function getDeviceInfo(): DeviceInfo {
 
   const userAgent = navigator.userAgent;
 
-  // Detect browser - Check in order of specificity to avoid false positives
+  // Detect browser
   let browser = 'Unknown';
-  if (userAgent.indexOf('Firefox') > -1 && userAgent.indexOf('Seamonkey') === -1) {
+  if (userAgent.indexOf('Firefox') > -1) {
     browser = 'Firefox';
-  } else if (userAgent.indexOf('Edg') > -1) {
-    // Modern Edge (Chromium-based)
-    browser = 'Edge';
-  } else if (userAgent.indexOf('OPR') > -1 || userAgent.indexOf('Opera') > -1) {
-    browser = 'Opera';
-  } else if (userAgent.indexOf('Chrome') > -1 && userAgent.indexOf('Safari') > -1) {
-    // Chrome includes both "Chrome" and "Safari" in UA
+  } else if (userAgent.indexOf('Chrome') > -1) {
     browser = 'Chrome';
   } else if (userAgent.indexOf('Safari') > -1) {
-    // Safari only has "Safari" but not "Chrome"
     browser = 'Safari';
   } else if (userAgent.indexOf('Edge') > -1) {
-    // Legacy Edge
     browser = 'Edge';
   }
 
-  // Detect OS - Check more specific patterns first
+  // Detect OS
   let os = 'Unknown';
-  if (userAgent.indexOf('iPhone') > -1 || userAgent.indexOf('iPad') > -1 || userAgent.indexOf('iPod') > -1) {
-    os = 'iOS';
-  } else if (userAgent.indexOf('Android') > -1) {
-    os = 'Android';
-  } else if (userAgent.indexOf('Win') > -1) {
-    os = 'Windows';
-  } else if (userAgent.indexOf('Mac') > -1) {
-    os = 'MacOS';
-  } else if (userAgent.indexOf('Linux') > -1) {
-    os = 'Linux';
-  }
+  if (userAgent.indexOf('Win') > -1) os = 'Windows';
+  else if (userAgent.indexOf('Mac') > -1) os = 'MacOS';
+  else if (userAgent.indexOf('Linux') > -1) os = 'Linux';
+  else if (userAgent.indexOf('Android') > -1) os = 'Android';
+  else if (userAgent.indexOf('iOS') > -1 || userAgent.indexOf('iPhone') > -1) os = 'iOS';
 
   return {
     browser,
@@ -309,34 +175,6 @@ export function getDeviceInfo(): DeviceInfo {
     screen: `${window.screen.width} x ${window.screen.height}`,
     userAgent,
   };
-}
-
-// Get enhanced device info (async, includes battery and network data)
-export async function getEnhancedDeviceInfo(): Promise<DeviceInfo> {
-  const basic = getDeviceInfo();
-
-  // Battery API
-  try {
-    if (typeof navigator !== 'undefined' && 'getBattery' in navigator) {
-      const battery = await (navigator as any).getBattery();
-      basic.batteryLevel = Math.round(battery.level * 100);
-      basic.batteryCharging = battery.charging;
-    }
-  } catch {
-    // Battery API may not be available in all browsers
-  }
-
-  // Network Information API
-  try {
-    const conn = (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection;
-    if (conn) {
-      basic.connectionType = conn.effectiveType || conn.type || 'unknown';
-    }
-  } catch {
-    // Network Information API may not be available in all browsers
-  }
-
-  return basic;
 }
 
 // Get IP address (using free API)
@@ -358,11 +196,10 @@ export function getCurrentPosition(): Promise<GeolocationPosition> {
       return;
     }
 
-    // Use longer timeout and less aggressive settings for better mobile compatibility
     navigator.geolocation.getCurrentPosition(resolve, reject, {
       enableHighAccuracy: true,
-      timeout: 30000, // Increased to 30 seconds for slower devices/networks
-      maximumAge: 5000, // Allow cached position up to 5 seconds old
+      timeout: 10000,
+      maximumAge: 0,
     });
   });
 }

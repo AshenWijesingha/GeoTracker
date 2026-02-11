@@ -15,7 +15,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, var(--overlay-bg) 0%, var(--overlay-bg-alt) 100%);
+  background: linear-gradient(135deg, rgba(5, 5, 16, 0.95) 0%, rgba(10, 10, 26, 0.92) 100%);
   pointer-events: none;
   z-index: 0;
 }
@@ -26,13 +26,13 @@
 }
 
 .header {
-  background: var(--bg-card);
-  color: var(--text-primary);
+  background: rgba(10, 10, 26, 0.9);
+  color: white;
   padding: 20px 30px;
   border-radius: 8px;
   margin-bottom: 30px;
-  box-shadow: 0 0 30px var(--shadow-color);
-  border: 1px solid var(--border-color);
+  box-shadow: 0 0 30px rgba(0, 255, 136, 0.2);
+  border: 1px solid rgba(0, 255, 136, 0.3);
   backdrop-filter: blur(10px);
 }
 
@@ -48,16 +48,16 @@
   font-size: 24px;
   margin-bottom: 5px;
   font-family: 'Orbitron', sans-serif;
-  color: var(--accent-primary);
+  color: #00ff88;
   text-transform: uppercase;
   letter-spacing: 2px;
-  text-shadow: 0 0 20px var(--shadow-color);
+  text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
 }
 
 .subtitle {
   opacity: 0.8;
   font-size: 13px;
-  color: var(--text-secondary);
+  color: #888;
   letter-spacing: 1px;
 }
 
@@ -69,36 +69,36 @@
 }
 
 .userInfo {
-  background: var(--accent-primary-alpha10);
+  background: rgba(0, 255, 136, 0.1);
   padding: 8px 16px;
   border-radius: 4px;
   font-size: 12px;
-  color: var(--accent-primary);
-  border: 1px solid var(--border-color);
+  color: #00ff88;
+  border: 1px solid rgba(0, 255, 136, 0.3);
   font-family: 'Share Tech Mono', monospace;
 }
 
 .navLink {
-  color: var(--accent-secondary);
+  color: #00ccff;
   text-decoration: none;
   font-size: 12px;
   padding: 8px 16px;
-  background: var(--accent-secondary-alpha10);
-  border: 1px solid var(--accent-secondary-alpha30);
+  background: rgba(0, 204, 255, 0.1);
+  border: 1px solid rgba(0, 204, 255, 0.3);
   border-radius: 4px;
   transition: all 0.3s;
   font-family: 'Share Tech Mono', monospace;
 }
 
 .navLink:hover {
-  background: var(--accent-secondary-alpha20);
-  box-shadow: 0 0 15px var(--shadow-color);
+  background: rgba(0, 204, 255, 0.2);
+  box-shadow: 0 0 15px rgba(0, 204, 255, 0.3);
 }
 
 .logoutBtn {
-  background: var(--danger-alpha10);
-  color: var(--error-color);
-  border: 1px solid var(--danger-alpha30);
+  background: rgba(255, 51, 102, 0.1);
+  color: #ff3366;
+  border: 1px solid rgba(255, 51, 102, 0.3);
   padding: 8px 16px;
   border-radius: 4px;
   cursor: pointer;
@@ -108,22 +108,22 @@
 }
 
 .logoutBtn:hover {
-  background: var(--danger-alpha10);
-  box-shadow: 0 0 15px var(--danger-alpha30);
+  background: rgba(255, 51, 102, 0.2);
+  box-shadow: 0 0 15px rgba(255, 51, 102, 0.3);
 }
 
 .createTracker {
-  background: var(--bg-card);
+  background: rgba(10, 10, 26, 0.9);
   padding: 30px;
   border-radius: 8px;
   margin-bottom: 30px;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-  border: 1px solid var(--border-color);
+  border: 1px solid rgba(0, 255, 136, 0.2);
   backdrop-filter: blur(10px);
 }
 
 .createTracker h2 {
-  color: var(--accent-primary);
+  color: #00ff88;
   margin-bottom: 20px;
   font-family: 'Orbitron', sans-serif;
   font-size: 16px;
@@ -137,7 +137,7 @@
 
 .formGroup label {
   display: block;
-  color: var(--text-secondary);
+  color: #888;
   margin-bottom: 8px;
   font-weight: 500;
   font-size: 12px;
@@ -148,35 +148,35 @@
 .input {
   width: 100%;
   padding: 12px;
-  border: 1px solid var(--input-border);
+  border: 1px solid rgba(0, 255, 136, 0.3);
   border-radius: 4px;
   font-size: 14px;
   transition: all 0.3s;
-  background: var(--input-bg);
-  color: var(--text-primary);
+  background: rgba(0, 0, 0, 0.5);
+  color: #e0e0e0;
   font-family: 'Share Tech Mono', monospace;
 }
 
 .input:focus {
   outline: none;
-  border-color: var(--accent-primary);
-  box-shadow: 0 0 15px var(--shadow-color);
+  border-color: #00ff88;
+  box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
 }
 
 .input::placeholder {
-  color: var(--placeholder-color);
+  color: #555;
 }
 
 .generatedLink {
   margin-top: 20px;
   padding: 20px;
-  background: var(--accent-primary-alpha10);
-  border: 1px solid var(--border-color);
+  background: rgba(0, 255, 136, 0.1);
+  border: 1px solid rgba(0, 255, 136, 0.3);
   border-radius: 4px;
 }
 
 .generatedLink h3 {
-  color: var(--accent-primary);
+  color: #00ff88;
   margin-bottom: 10px;
   font-family: 'Orbitron', sans-serif;
   font-size: 14px;
@@ -185,34 +185,34 @@
 }
 
 .generatedLink p {
-  color: var(--text-secondary);
+  color: #888;
   font-size: 13px;
   margin-bottom: 10px;
 }
 
 .linkText {
   font-family: 'Share Tech Mono', monospace;
-  background: var(--input-bg);
+  background: rgba(0, 0, 0, 0.5);
   padding: 15px;
   border-radius: 4px;
   word-break: break-all;
   margin: 15px 0;
-  color: var(--accent-secondary);
-  border: 1px solid var(--accent-secondary-alpha30);
+  color: #00ccff;
+  border: 1px solid rgba(0, 204, 255, 0.3);
   font-size: 13px;
 }
 
 .trackersList {
-  background: var(--bg-card);
+  background: rgba(10, 10, 26, 0.9);
   padding: 30px;
   border-radius: 8px;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-  border: 1px solid var(--border-color);
+  border: 1px solid rgba(0, 255, 136, 0.2);
   backdrop-filter: blur(10px);
 }
 
 .trackersList h2 {
-  color: var(--accent-primary);
+  color: #00ff88;
   margin-bottom: 20px;
   font-family: 'Orbitron', sans-serif;
   font-size: 16px;
@@ -221,22 +221,22 @@
 }
 
 .trackerCard {
-  background: var(--card-subtle-bg);
+  background: rgba(0, 255, 136, 0.03);
   padding: 20px;
   border-radius: 4px;
   margin-bottom: 15px;
-  border-left: 3px solid var(--accent-primary);
-  border-top: 1px solid var(--border-color);
-  border-right: 1px solid var(--border-color);
-  border-bottom: 1px solid var(--border-color);
+  border-left: 3px solid #00ff88;
+  border-top: 1px solid rgba(0, 255, 136, 0.1);
+  border-right: 1px solid rgba(0, 255, 136, 0.1);
+  border-bottom: 1px solid rgba(0, 255, 136, 0.1);
   cursor: pointer;
   transition: all 0.3s;
 }
 
 .trackerCard:hover {
   transform: translateX(5px);
-  box-shadow: 0 0 20px var(--shadow-color);
-  background: var(--card-hover-bg);
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
+  background: rgba(0, 255, 136, 0.05);
 }
 
 .trackerHeader {
@@ -249,7 +249,7 @@
 .trackerName {
   font-size: 16px;
   font-weight: 600;
-  color: var(--accent-primary);
+  color: #00ff88;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -258,7 +258,7 @@
 
 .inactiveTag {
   font-size: 10px;
-  background: var(--error-color);
+  background: #ff3366;
   color: white;
   padding: 2px 8px;
   border-radius: 4px;
@@ -269,14 +269,14 @@
 
 .trackerId {
   font-size: 11px;
-  color: var(--muted-text);
+  color: #666;
   font-family: 'Share Tech Mono', monospace;
   margin-top: 5px;
 }
 
 .createdBy {
   font-size: 11px;
-  color: var(--muted-text-alt);
+  color: #555;
   margin-top: 4px;
 }
 
@@ -288,30 +288,30 @@
 
 .locationsCount {
   display: inline-block;
-  background: var(--accent-secondary-alpha20);
-  color: var(--accent-secondary);
+  background: rgba(0, 204, 255, 0.2);
+  color: #00ccff;
   padding: 4px 12px;
   border-radius: 4px;
   font-size: 11px;
   font-weight: 600;
-  border: 1px solid var(--accent-secondary-alpha30);
+  border: 1px solid rgba(0, 204, 255, 0.3);
   font-family: 'Share Tech Mono', monospace;
 }
 
 .deleteBtn {
   background: transparent;
-  border: 1px solid var(--danger-alpha30);
+  border: 1px solid rgba(255, 51, 102, 0.3);
   cursor: pointer;
   font-size: 16px;
   padding: 5px 10px;
   border-radius: 4px;
   transition: all 0.3s;
-  color: var(--error-color);
+  color: #ff3366;
 }
 
 .deleteBtn:hover {
-  background: var(--danger-alpha10);
-  box-shadow: 0 0 10px var(--danger-alpha30);
+  background: rgba(255, 51, 102, 0.1);
+  box-shadow: 0 0 10px rgba(255, 51, 102, 0.3);
 }
 
 .trackerInfo {
@@ -323,30 +323,30 @@
 
 .infoItem {
   font-size: 12px;
-  color: var(--text-secondary);
+  color: #888;
 }
 
 .infoItem strong {
-  color: var(--text-primary);
+  color: #aaa;
 }
 
 .trackerDetails {
   margin-top: 20px;
   padding-top: 20px;
-  border-top: 1px solid var(--divider-color);
+  border-top: 1px solid rgba(0, 255, 136, 0.2);
 }
 
 .locationEntry {
-  background: var(--card-subtle-bg);
+  background: rgba(0, 0, 0, 0.3);
   padding: 15px;
   border-radius: 4px;
   margin-bottom: 10px;
-  border: 1px solid var(--border-color);
+  border: 1px solid rgba(0, 255, 136, 0.1);
 }
 
 .locationTime {
   font-weight: 600;
-  color: var(--accent-secondary);
+  color: #00ccff;
   margin-bottom: 10px;
   font-family: 'Share Tech Mono', monospace;
   font-size: 13px;
@@ -364,14 +364,14 @@
 }
 
 .coordLabel {
-  color: var(--muted-text);
+  color: #666;
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 1px;
 }
 
 .coordValue {
-  color: var(--text-primary);
+  color: #e0e0e0;
   font-weight: 500;
   font-family: 'Share Tech Mono', monospace;
 }
@@ -379,452 +379,11 @@
 .emptyState {
   text-align: center;
   padding: 40px;
-  color: var(--muted-text);
+  color: #666;
 }
 
 .emptyStateIcon {
   font-size: 48px;
   margin-bottom: 15px;
   filter: grayscale(1) opacity(0.5);
-}
-
-.trackerLink {
-  display: inline;
-  padding: 2px 6px;
-  font-size: 11px;
-  cursor: pointer;
-  font-family: 'Share Tech Mono', monospace;
-  background: var(--input-bg);
-  color: var(--accent-secondary);
-  border: 1px solid var(--accent-secondary-alpha30);
-  border-radius: 4px;
-  word-break: break-all;
-}
-
-.statusMessage {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  padding: 15px 25px;
-  border-radius: 8px;
-  font-weight: 500;
-  z-index: 9999;
-  animation: slideIn 0.3s ease-out;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  max-width: 400px;
-}
-
-.statusMessage.success {
-  background: rgba(0, 200, 83, 0.95);
-  color: white;
-  border: 1px solid rgba(0, 255, 136, 0.5);
-}
-
-.statusMessage.error {
-  background: rgba(220, 38, 38, 0.95);
-  color: white;
-  border: 1px solid rgba(255, 50, 50, 0.5);
-}
-
-@keyframes slideIn {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-.helpText {
-  display: block;
-  font-size: 12px;
-  color: var(--text-secondary);
-  margin-top: 4px;
-}
-
-/* Real-time location styles */
-.realtimeBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--accent-primary-alpha10);
-  color: var(--accent-primary);
-  padding: 3px 10px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 600;
-  margin-left: 12px;
-  border: 1px solid var(--border-color);
-  font-family: 'Share Tech Mono', monospace;
-  text-transform: none;
-  letter-spacing: 0;
-  vertical-align: middle;
-}
-
-.realtimePulse {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  background: var(--accent-primary);
-  border-radius: 50%;
-  animation: pulse 2s ease-in-out infinite;
-  flex-shrink: 0;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-    box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.7);
-  }
-  50% {
-    opacity: 0.6;
-    box-shadow: 0 0 0 6px rgba(0, 255, 136, 0);
-  }
-}
-
-.realtimeLocation {
-  margin-top: 15px;
-  padding: 15px;
-  background: var(--accent-primary-alpha05);
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-}
-
-.realtimeHeader {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-  color: var(--accent-primary);
-  font-size: 13px;
-  font-family: 'Orbitron', sans-serif;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.heartbeatInfo {
-  margin-left: auto;
-  font-size: 10px;
-  color: var(--muted-text);
-  font-family: 'Share Tech Mono', monospace;
-  text-transform: none;
-  letter-spacing: 0;
-}
-
-.realtimeCoords {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 10px;
-  margin-bottom: 12px;
-}
-
-.awaitingData {
-  color: var(--text-secondary);
-  font-size: 13px;
-  font-family: 'Share Tech Mono', monospace;
-  padding: 10px 0;
-  letter-spacing: 0.5px;
-}
-
-.exportActions {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
-  flex-wrap: wrap;
-}
-
-.searchBox {
-  margin-bottom: 20px;
-}
-
-.searchInput {
-  width: 100%;
-  max-width: 400px;
-  padding: 10px 16px;
-  border: 1px solid var(--input-border);
-  border-radius: 4px;
-  font-size: 13px;
-  background: var(--input-bg);
-  color: var(--text-primary);
-  font-family: 'Share Tech Mono', monospace;
-  transition: all 0.3s;
-}
-
-.searchInput:focus {
-  outline: none;
-  border-color: var(--accent-primary);
-  box-shadow: 0 0 15px var(--shadow-color);
-}
-
-.searchInput::placeholder {
-  color: var(--placeholder-color);
-}
-
-.mapEmbed {
-  width: 100%;
-  height: 250px;
-  border-radius: 4px;
-  overflow: hidden;
-  margin-bottom: 12px;
-  border: 1px solid var(--border-color);
-  box-shadow: 0 0 15px var(--shadow-color);
-}
-
-.mapIframe {
-  width: 100%;
-  height: 100%;
-  border: none;
-}
-
-.themeToggleBtn {
-  background: var(--accent-primary-alpha10);
-  border: 1px solid var(--border-color);
-  padding: 8px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 16px;
-  transition: all 0.3s;
-  line-height: 1;
-}
-
-.themeToggleBtn:hover {
-  background: var(--accent-primary-alpha10);
-  box-shadow: 0 0 15px var(--shadow-color);
-}
-
-/* Notification bell */
-.notifBellWrapper {
-  position: relative;
-}
-
-.notifBellBtn {
-  background: var(--accent-primary-alpha10);
-  border: 1px solid var(--border-color);
-  padding: 8px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 16px;
-  transition: all 0.3s;
-  line-height: 1;
-  position: relative;
-}
-
-.notifBellBtn:hover {
-  background: var(--accent-primary-alpha10);
-  box-shadow: 0 0 15px var(--shadow-color);
-}
-
-.notifBadge {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  background: var(--error-color);
-  color: #fff;
-  font-size: 10px;
-  font-weight: 700;
-  min-width: 18px;
-  height: 18px;
-  border-radius: 9px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 4px;
-  font-family: 'Share Tech Mono', monospace;
-  line-height: 1;
-  box-shadow: 0 0 6px rgba(255, 51, 102, 0.5);
-}
-
-.notifDropdown {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  width: 340px;
-  max-height: 420px;
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  z-index: 100;
-  display: flex;
-  flex-direction: column;
-  backdrop-filter: blur(10px);
-  animation: notifSlideIn 0.2s ease-out;
-}
-
-@keyframes notifSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.notifDropdownHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--divider-color);
-}
-
-.notifDropdownTitle {
-  font-family: 'Orbitron', sans-serif;
-  font-size: 12px;
-  color: var(--accent-primary);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.notifMarkAllBtn {
-  background: none;
-  border: none;
-  color: var(--accent-secondary);
-  font-size: 11px;
-  cursor: pointer;
-  font-family: 'Share Tech Mono', monospace;
-  padding: 2px 6px;
-  border-radius: 4px;
-  transition: background 0.2s;
-}
-
-.notifMarkAllBtn:hover {
-  background: var(--accent-secondary-alpha10);
-}
-
-.notifDropdownList {
-  overflow-y: auto;
-  flex: 1;
-  max-height: 320px;
-}
-
-.notifEmpty {
-  padding: 32px 16px;
-  text-align: center;
-  color: var(--muted-text);
-  font-size: 13px;
-  font-family: 'Share Tech Mono', monospace;
-}
-
-.notifItem {
-  display: flex;
-  gap: 10px;
-  padding: 10px 16px;
-  cursor: pointer;
-  transition: background 0.2s;
-  border-bottom: 1px solid var(--divider-color);
-}
-
-.notifItem:last-child {
-  border-bottom: none;
-}
-
-.notifItem:hover {
-  background: var(--card-hover-bg);
-}
-
-.notifUnread {
-  background: var(--accent-primary-alpha05);
-  border-left: 2px solid var(--accent-primary);
-}
-
-.notifIcon {
-  font-size: 16px;
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.notifContent {
-  flex: 1;
-  min-width: 0;
-}
-
-.notifItemTitle {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 2px;
-  font-family: 'Share Tech Mono', monospace;
-}
-
-.notifItemMsg {
-  font-size: 11px;
-  color: var(--text-secondary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.notifItemTime {
-  font-size: 10px;
-  color: var(--muted-text);
-  margin-top: 3px;
-  font-family: 'Share Tech Mono', monospace;
-}
-
-.notifViewAll {
-  display: block;
-  text-align: center;
-  padding: 10px 16px;
-  font-size: 12px;
-  color: var(--accent-secondary);
-  text-decoration: none;
-  border-top: 1px solid var(--divider-color);
-  font-family: 'Share Tech Mono', monospace;
-  transition: background 0.2s;
-}
-
-.notifViewAll:hover {
-  background: var(--accent-secondary-alpha10);
-}
-
-.addressInfo {
-  color: var(--text-secondary);
-  font-size: 0.85rem;
-  padding: 8px 12px;
-  background: var(--bg-secondary);
-  border-radius: 6px;
-  margin: 8px 0;
-  border-left: 3px solid var(--accent-primary);
-}
-
-.qrCodeSection {
-  display: flex;
-  justify-content: center;
-  padding: 16px 0;
-}
-
-.qrCodeImage {
-  border-radius: 8px;
-  border: 2px solid var(--border-color);
-  background: white;
-  padding: 8px;
-}
-
-.qrBtn {
-  background: none;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  cursor: pointer;
-  padding: 2px 6px;
-  font-size: 14px;
-  margin-left: 8px;
-  transition: background 0.2s;
-}
-
-.qrBtn:hover {
-  background: var(--bg-secondary);
-}
-
-.qrCodeInline {
-  display: flex;
-  justify-content: center;
-  padding: 12px 0;
-  background: var(--bg-secondary);
-  border-radius: 8px;
-  margin: 8px 0;
 }
