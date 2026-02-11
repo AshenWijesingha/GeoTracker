@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import {
   LocationData,
@@ -9,6 +9,9 @@ import {
   getIPAddress,
   getCurrentPosition,
   getGeolocationErrorMessage,
+  generateTrackingId,
+  getOrCreateTrackerAsync,
+  addLocationToTrackerAsync,
 } from '@/lib/storage';
 import styles from './page.module.css';
 
@@ -20,10 +23,57 @@ export default function StandaloneTracker() {
   const [locationData, setLocationData] = useState<LocationData | null>(null);
   const [deviceInfo, setDeviceInfo] = useState<DeviceInfo | null>(null);
   const [ipAddress, setIpAddress] = useState('Scanning...');
+  const [updateCount, setUpdateCount] = useState(0);
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const trackingIdRef = useRef<string>('');
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const lastFetchTimeRef = useRef<number>(0);
+  const trackerReadyRef = useRef(false);
 
-  const fetchLocation = useCallback(async () => {
-    setStatus('loading');
-    setStatusMessage('Acquiring target coordinates...');
+  // Generate or retrieve a session tracking ID for this standalone tracker
+  useEffect(() => {
+    // Use sessionStorage so each tab/session gets its own ID (works in incognito too)
+    let id = '';
+    try {
+      id = sessionStorage.getItem('standalone_tracker_id') || '';
+    } catch {
+      // sessionStorage may be unavailable
+    }
+    if (!id) {
+      id = generateTrackingId();
+      try {
+        sessionStorage.setItem('standalone_tracker_id', id);
+      } catch {
+        // sessionStorage may be unavailable in some environments
+      }
+    }
+    trackingIdRef.current = id;
+  }, []);
+
+  const saveLocationToFirebase = useCallback(async (data: LocationData) => {
+    const trackingId = trackingIdRef.current;
+    if (!trackingId) return;
+
+    try {
+      if (!trackerReadyRef.current) {
+        await getOrCreateTrackerAsync(trackingId);
+        trackerReadyRef.current = true;
+      }
+      const success = await addLocationToTrackerAsync(trackingId, data);
+      if (success) {
+        setUpdateCount((prev) => prev + 1);
+        setLastUpdate(new Date());
+      }
+    } catch (error) {
+      console.error('Error syncing location to Firebase:', error);
+    }
+  }, []);
+
+  const fetchLocation = useCallback(async (isAutoUpdate = false) => {
+    if (!isAutoUpdate) {
+      setStatus('loading');
+      setStatusMessage('Acquiring target coordinates...');
+    }
 
     try {
       const position = await getCurrentPosition();
@@ -45,8 +95,10 @@ export default function StandaloneTracker() {
       setStatus('success');
       setStatusMessage('Target location acquired');
 
-      // Log data to console (standalone mode - no server storage)
-      console.log('Location Data:', data);
+      lastFetchTimeRef.current = Date.now();
+
+      // Sync to Firebase
+      await saveLocationToFirebase(data);
     } catch (error) {
       if (error instanceof GeolocationPositionError) {
         setStatusMessage(getGeolocationErrorMessage(error));
@@ -57,13 +109,43 @@ export default function StandaloneTracker() {
       }
       setStatus('error');
     }
-  }, []);
+  }, [saveLocationToFirebase]);
 
   useEffect(() => {
     const device = getDeviceInfo();
     setDeviceInfo(device);
     getIPAddress().then(setIpAddress);
     fetchLocation();
+
+    // Handle mobile browsers where setInterval is throttled/paused
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        const elapsed = Date.now() - lastFetchTimeRef.current;
+        if (elapsed >= 15000) {
+          fetchLocation(true);
+        }
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+        }
+        intervalRef.current = setInterval(() => {
+          fetchLocation(true);
+        }, 15000);
+      }
+    };
+
+    // Set up 15-second auto-update interval
+    intervalRef.current = setInterval(() => {
+      fetchLocation(true);
+    }, 15000);
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [fetchLocation]);
 
   const mapUrl = locationData
@@ -75,6 +157,15 @@ export default function StandaloneTracker() {
       <div className={styles.container}>
         <h1>🎯 Cyber Tracker</h1>
         <p className={styles.subtitle}>Standalone surveillance module</p>
+
+        <div className={styles.trackerInfo}>
+          <p>📡 Location data is being synced to Firebase</p>
+          {updateCount > 0 && (
+            <p>✓ {updateCount} location update{updateCount !== 1 ? 's' : ''} synced
+              {lastUpdate && ` • Last: ${lastUpdate.toLocaleTimeString()}`}
+            </p>
+          )}
+        </div>
 
         <div className={`status ${status}`}>
           {status === 'loading' && <div className="spinner"></div>}
@@ -115,7 +206,7 @@ export default function StandaloneTracker() {
               ></iframe>
             </div>
 
-            <button className="btn btn-rounded" onClick={fetchLocation}>
+            <button className="btn btn-rounded" onClick={() => fetchLocation()}>
               🔄 Refresh Coordinates
             </button>
 

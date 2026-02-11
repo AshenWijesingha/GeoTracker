@@ -101,29 +101,34 @@ function TrackerContent() {
     }
   }, [trackingId, saveLocationToStorage]);
 
-  // Initialize tracker
+  // Initialize tracker and start location tracking
   useEffect(() => {
-    const initTracker = async () => {
+    let cancelled = false;
+
+    const init = async () => {
+      const device = getDeviceInfo();
+      setDeviceInfo(device);
+      getIPAddress().then(setIpAddress);
+
+      // Ensure tracker exists in Firebase before fetching location
       if (trackingId && !trackerInitialized) {
         try {
-          // Auto-create tracker if it doesn't exist
           await getOrCreateTrackerAsync(trackingId);
-          setTrackerInitialized(true);
+          if (!cancelled) {
+            setTrackerInitialized(true);
+          }
         } catch (error) {
           console.error('Error initializing tracker:', error);
         }
       }
+
+      // Initial location fetch (after tracker is initialized)
+      if (!cancelled) {
+        fetchLocation();
+      }
     };
-    initTracker();
-  }, [trackingId, trackerInitialized]);
 
-  useEffect(() => {
-    const device = getDeviceInfo();
-    setDeviceInfo(device);
-    getIPAddress().then(setIpAddress);
-
-    // Initial location fetch
-    fetchLocation();
+    init();
 
     // Handle mobile browsers where setInterval is throttled/paused
     // when the tab is backgrounded or the screen is locked
@@ -154,12 +159,14 @@ function TrackerContent() {
     }
 
     return () => {
+      cancelled = true;
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [trackingId, fetchLocation]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trackingId]);
 
   const mapUrl = locationData
     ? `https://maps.google.com/maps?q=${locationData.latitude},${locationData.longitude}&z=15&output=embed`
