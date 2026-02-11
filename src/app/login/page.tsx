@@ -15,6 +15,7 @@ export default function LoginPage() {
   const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [logoFailed, setLogoFailed] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,20 +54,19 @@ export default function LoginPage() {
     <div className={styles.loginBg}>
       <div className={styles.container}>
         <div className={styles.logo}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="https://res.cloudinary.com/dkj22lm1g/image/upload/v1770788944/GeoTracker_fbqxq1.webp"
-            alt="GeoTracker Logo"
-            width={80}
-            height={80}
-            className={styles.logoImage}
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = 'none';
-              const fallback = document.createElement('span');
-              fallback.textContent = '🎯';
-              (e.target as HTMLImageElement).parentElement?.appendChild(fallback);
-            }}
-          />
+          {logoFailed ? (
+            <span>🎯</span>
+          ) : (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src="https://res.cloudinary.com/dkj22lm1g/image/upload/v1770788944/GeoTracker_fbqxq1.webp"
+              alt="GeoTracker Logo"
+              width={80}
+              height={80}
+              className={styles.logoImage}
+              onError={() => setLogoFailed(true)}
+            />
+          )}
         </div>
         <h1>GeoTracker</h1>
         <p className={styles.subtitle}>
