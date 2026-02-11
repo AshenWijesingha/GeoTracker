@@ -231,8 +231,67 @@ export default function Dashboard() {
                 </div>
               </div>
 
+              {tracker.locations.length > 0 && (() => {
+                const latestLocation = tracker.locations[tracker.locations.length - 1];
+                const lastTime = new Date(latestLocation.timestamp).getTime();
+                const isRecent = Date.now() - lastTime < 60000;
+                return (
+                  <div className={styles.latestLocationSummary}>
+                    <div className={styles.latestLocationHeader}>
+                      <span className={styles.latestLocationTitle}>📍 Latest Location</span>
+                      <span className={isRecent ? styles.statusActive : styles.statusInactive}>
+                        {isRecent ? '● Live' : '○ Idle'}
+                      </span>
+                    </div>
+                    <div className={styles.latestLocationGrid}>
+                      <div className={styles.latestLocationItem}>
+                        <div className={styles.coordLabel}>Latitude</div>
+                        <div className={styles.coordValue}>{latestLocation.latitude.toFixed(6)}</div>
+                      </div>
+                      <div className={styles.latestLocationItem}>
+                        <div className={styles.coordLabel}>Longitude</div>
+                        <div className={styles.coordValue}>{latestLocation.longitude.toFixed(6)}</div>
+                      </div>
+                      <div className={styles.latestLocationItem}>
+                        <div className={styles.coordLabel}>Accuracy</div>
+                        <div className={styles.coordValue}>±{latestLocation.accuracy.toFixed(2)}m</div>
+                      </div>
+                      {latestLocation.deviceInfo && (
+                        <div className={styles.latestLocationItem}>
+                          <div className={styles.coordLabel}>Device</div>
+                          <div className={styles.coordValue}>
+                            {latestLocation.deviceInfo.os} - {latestLocation.deviceInfo.browser}
+                          </div>
+                        </div>
+                      )}
+                      {latestLocation.ip && (
+                        <div className={styles.latestLocationItem}>
+                          <div className={styles.coordLabel}>IP Address</div>
+                          <div className={styles.coordValue}>{latestLocation.ip}</div>
+                        </div>
+                      )}
+                      {latestLocation.deviceInfo && (
+                        <div className={styles.latestLocationItem}>
+                          <div className={styles.coordLabel}>Screen</div>
+                          <div className={styles.coordValue}>{latestLocation.deviceInfo.screen}</div>
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      className="btn btn-success"
+                      onClick={(e) => viewOnMap(latestLocation.latitude, latestLocation.longitude, e)}
+                    >
+                      🗺️ View Latest on Map
+                    </button>
+                  </div>
+                );
+              })()}
+
               {expandedTracker === tracker.id && (
                 <div className={styles.trackerDetails}>
+                  <div className={styles.locationHistoryHeader}>
+                    📋 Location History ({tracker.locations.length} entries)
+                  </div>
                   {tracker.locations.length > 0 ? (
                     tracker.locations.map((location, index) => (
                       <div key={index} className={styles.locationEntry}>

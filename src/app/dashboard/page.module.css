@@ -376,6 +376,77 @@
   font-family: 'Share Tech Mono', monospace;
 }
 
+.latestLocationSummary {
+  margin-top: 15px;
+  padding: 15px;
+  background: rgba(0, 204, 255, 0.05);
+  border: 1px solid rgba(0, 204, 255, 0.2);
+  border-radius: 4px;
+}
+
+.latestLocationHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.latestLocationTitle {
+  color: #00ccff;
+  font-size: 12px;
+  font-family: 'Orbitron', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.statusActive {
+  color: #00ff88;
+  font-size: 11px;
+  font-family: 'Share Tech Mono', monospace;
+  padding: 3px 10px;
+  background: rgba(0, 255, 136, 0.1);
+  border: 1px solid rgba(0, 255, 136, 0.3);
+  border-radius: 4px;
+  animation: pulse 2s infinite;
+}
+
+.statusInactive {
+  color: #888;
+  font-size: 11px;
+  font-family: 'Share Tech Mono', monospace;
+  padding: 3px 10px;
+  background: rgba(136, 136, 136, 0.1);
+  border: 1px solid rgba(136, 136, 136, 0.3);
+  border-radius: 4px;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.latestLocationGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.latestLocationItem {
+  font-size: 13px;
+}
+
+.locationHistoryHeader {
+  color: #00ccff;
+  font-size: 13px;
+  font-family: 'Orbitron', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(0, 204, 255, 0.2);
+}
+
 .emptyState {
   text-align: center;
   padding: 40px;
