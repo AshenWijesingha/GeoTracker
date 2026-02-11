@@ -69,7 +69,7 @@ export default function LoginPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className={styles.form}>
+        <form onSubmit={handleSubmit} action="#" className={styles.form}>
           {isSignUp && (
             <div className={styles.inputGroup}>
               <label htmlFor="displayName">Display Name</label>
