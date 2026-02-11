@@ -59,9 +59,7 @@ export async function getTrackersAsync(): Promise<Tracker[]> {
       throw error;
     }
     console.error('Firebase error, falling back to localStorage:', error);
-    // Fallback to localStorage if Firestore fails (e.g., index errors)
-    const localTrackers = getTrackers();
-    return localTrackers;
+    return getTrackers();
   }
 }
 
