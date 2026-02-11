@@ -42,12 +42,21 @@ function timestampToString(timestamp: Timestamp | string | undefined): string {
   return timestamp.toDate().toISOString();
 }
 
+// Helper to create tracker data object
+function createTrackerData(name: string) {
+  return {
+    name: name || 'Unnamed Tracker',
+    created: serverTimestamp(),
+    locations: [],
+  };
+}
+
 // === TRACKER OPERATIONS ===
 
 // Get all trackers
 export async function getTrackersFromFirebase(): Promise<Tracker[]> {
   if (!isAuthenticated()) {
-    console.warn('User not authenticated, skipping Firestore read');
+    console.warn('Skipping Firestore read: waiting for user authentication');
     return [];
   }
   try {
@@ -96,15 +105,11 @@ export async function getTrackerFromFirebase(trackingId: string): Promise<Tracke
 // Create a new tracker
 export async function createTrackerInFirebase(name: string, customId?: string): Promise<Tracker | null> {
   if (!isAuthenticated()) {
-    console.warn('User not authenticated, skipping Firestore write');
+    console.warn('Skipping Firestore write: waiting for user authentication');
     return null;
   }
   try {
-    const trackerData = {
-      name: name || 'Unnamed Tracker',
-      created: serverTimestamp(),
-      locations: [],
-    };
+    const trackerData = createTrackerData(name);
     
     let docRef;
     if (customId) {
@@ -136,12 +141,7 @@ export async function getOrCreateTrackerInFirebase(trackingId: string, name: str
       return existing;
     }
     // Direct creation without auth check for shared tracker links
-    const trackerData = {
-      name,
-      created: serverTimestamp(),
-      locations: [],
-    };
-    await setDoc(doc(db, TRACKERS_COLLECTION, trackingId), trackerData);
+    await setDoc(doc(db, TRACKERS_COLLECTION, trackingId), createTrackerData(name));
     return {
       id: trackingId,
       name,
@@ -161,11 +161,7 @@ export async function addLocationToTrackerInFirebase(trackingId: string, locatio
     const tracker = await getTrackerFromFirebase(trackingId);
     if (!tracker) {
       // Create the tracker if it doesn't exist
-      await setDoc(doc(db, TRACKERS_COLLECTION, trackingId), {
-        name: 'Shared Tracker',
-        created: serverTimestamp(),
-        locations: [],
-      });
+      await setDoc(doc(db, TRACKERS_COLLECTION, trackingId), createTrackerData('Shared Tracker'));
     }
     
     const trackerRef = doc(db, TRACKERS_COLLECTION, trackingId);
@@ -182,7 +178,7 @@ export async function addLocationToTrackerInFirebase(trackingId: string, locatio
 // Delete a tracker
 export async function deleteTrackerFromFirebase(trackingId: string): Promise<boolean> {
   if (!isAuthenticated()) {
-    console.warn('User not authenticated, skipping Firestore delete');
+    console.warn('Skipping Firestore delete: waiting for user authentication');
     return false;
   }
   try {
@@ -200,7 +196,7 @@ export async function deleteTrackerFromFirebase(trackingId: string): Promise<boo
 // Create or update user in Firestore
 export async function createOrUpdateUser(userId: string, email: string, displayName?: string): Promise<User | null> {
   if (!isAuthenticated()) {
-    console.warn('User not authenticated, skipping Firestore user update');
+    console.warn('Skipping Firestore user update: waiting for user authentication');
     return null;
   }
   try {
@@ -244,7 +240,7 @@ export async function createOrUpdateUser(userId: string, email: string, displayN
 // Get all users
 export async function getUsersFromFirebase(): Promise<User[]> {
   if (!isAuthenticated()) {
-    console.warn('User not authenticated, skipping Firestore read');
+    console.warn('Skipping Firestore read: waiting for user authentication');
     return [];
   }
   try {

@@ -174,7 +174,19 @@ export default function Dashboard() {
 
       <div className={styles.trackersList}>
         <h2>Active Sessions ({trackers.length})</h2>
-        {trackers.length === 0 ? (
+        {permissionError ? (
+          <div className={styles.emptyState}>
+            <div className={styles.emptyStateIcon}>⚠️</div>
+            <p>Unable to access tracker data due to insufficient permissions.</p>
+            <p style={{ marginTop: '10px', color: '#666', fontSize: '14px' }}>
+              Please ensure Firestore security rules are properly configured.
+              See FIREBASE_SETUP.md for setup instructions.
+            </p>
+            <button className="btn" onClick={() => { setPermissionError(false); loadTrackers(); }} style={{ marginTop: '15px' }}>
+              🔄 Retry
+            </button>
+          </div>
+        ) : trackers.length === 0 ? (
           <div className={styles.emptyState}>
             <div className={styles.emptyStateIcon}>📡</div>
             <p>No active tracking sessions. Initialize your first tracker above.</p>
