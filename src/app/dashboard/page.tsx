@@ -21,17 +21,22 @@ export default function Dashboard() {
   const [expandedTracker, setExpandedTracker] = useState<string | null>(null);
   const [baseUrl, setBaseUrl] = useState('');
   const [loading, setLoading] = useState(true);
+  const [permissionError, setPermissionError] = useState(false);
 
   const loadTrackers = useCallback(async () => {
+    if (permissionError) return;
     try {
       const storedTrackers = await getTrackersAsync();
       setTrackers(storedTrackers);
     } catch (error) {
       console.error('Error loading trackers:', error);
+      if (error instanceof Error && error.message.includes('insufficient permissions')) {
+        setPermissionError(true);
+      }
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [permissionError]);
 
   useEffect(() => {
     // Check if user is authenticated
@@ -45,10 +50,12 @@ export default function Dashboard() {
       loadTrackers();
       
       // Auto-refresh every 10 seconds to detect changes
-      const interval = setInterval(loadTrackers, 10000);
-      return () => clearInterval(interval);
+      if (!permissionError) {
+        const interval = setInterval(loadTrackers, 10000);
+        return () => clearInterval(interval);
+      }
     }
-  }, [router, loadTrackers, user, authLoading]);
+  }, [router, loadTrackers, user, authLoading, permissionError]);
 
   const handleCreateTracker = async () => {
     if (!trackerName.trim()) {

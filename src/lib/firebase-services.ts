@@ -14,8 +14,13 @@ import {
   Timestamp,
   serverTimestamp,
 } from 'firebase/firestore';
-import { db } from './firebase';
+import { db, auth } from './firebase';
 import type { DeviceInfo, LocationData, Tracker } from './storage';
+
+// Check if user is currently authenticated
+function isAuthenticated(): boolean {
+  return auth.currentUser !== null;
+}
 
 // Collection names
 const TRACKERS_COLLECTION = 'trackers';
@@ -41,6 +46,10 @@ function timestampToString(timestamp: Timestamp | string | undefined): string {
 
 // Get all trackers
 export async function getTrackersFromFirebase(): Promise<Tracker[]> {
+  if (!isAuthenticated()) {
+    console.warn('User not authenticated, skipping Firestore read');
+    return [];
+  }
   try {
     const trackersRef = collection(db, TRACKERS_COLLECTION);
     const q = query(trackersRef, orderBy('created', 'desc'));
@@ -57,7 +66,7 @@ export async function getTrackersFromFirebase(): Promise<Tracker[]> {
     });
   } catch (error) {
     console.error('Error getting trackers:', error);
-    return [];
+    throw error;
   }
 }
 
@@ -80,12 +89,16 @@ export async function getTrackerFromFirebase(trackingId: string): Promise<Tracke
     } as Tracker;
   } catch (error) {
     console.error('Error getting tracker:', error);
-    return null;
+    throw error;
   }
 }
 
 // Create a new tracker
 export async function createTrackerInFirebase(name: string, customId?: string): Promise<Tracker | null> {
+  if (!isAuthenticated()) {
+    console.warn('User not authenticated, skipping Firestore write');
+    return null;
+  }
   try {
     const trackerData = {
       name: name || 'Unnamed Tracker',
@@ -111,7 +124,7 @@ export async function createTrackerInFirebase(name: string, customId?: string): 
     };
   } catch (error) {
     console.error('Error creating tracker:', error);
-    return null;
+    throw error;
   }
 }
 
@@ -122,10 +135,22 @@ export async function getOrCreateTrackerInFirebase(trackingId: string, name: str
     if (existing) {
       return existing;
     }
-    return await createTrackerInFirebase(name, trackingId);
+    // Direct creation without auth check for shared tracker links
+    const trackerData = {
+      name,
+      created: serverTimestamp(),
+      locations: [],
+    };
+    await setDoc(doc(db, TRACKERS_COLLECTION, trackingId), trackerData);
+    return {
+      id: trackingId,
+      name,
+      created: new Date().toISOString(),
+      locations: [],
+    };
   } catch (error) {
     console.error('Error getting or creating tracker:', error);
-    return null;
+    throw error;
   }
 }
 
@@ -136,7 +161,11 @@ export async function addLocationToTrackerInFirebase(trackingId: string, locatio
     const tracker = await getTrackerFromFirebase(trackingId);
     if (!tracker) {
       // Create the tracker if it doesn't exist
-      await createTrackerInFirebase('Shared Tracker', trackingId);
+      await setDoc(doc(db, TRACKERS_COLLECTION, trackingId), {
+        name: 'Shared Tracker',
+        created: serverTimestamp(),
+        locations: [],
+      });
     }
     
     const trackerRef = doc(db, TRACKERS_COLLECTION, trackingId);
@@ -146,19 +175,23 @@ export async function addLocationToTrackerInFirebase(trackingId: string, locatio
     return true;
   } catch (error) {
     console.error('Error adding location:', error);
-    return false;
+    throw error;
   }
 }
 
 // Delete a tracker
 export async function deleteTrackerFromFirebase(trackingId: string): Promise<boolean> {
+  if (!isAuthenticated()) {
+    console.warn('User not authenticated, skipping Firestore delete');
+    return false;
+  }
   try {
     const trackerRef = doc(db, TRACKERS_COLLECTION, trackingId);
     await deleteDoc(trackerRef);
     return true;
   } catch (error) {
     console.error('Error deleting tracker:', error);
-    return false;
+    throw error;
   }
 }
 
@@ -166,6 +199,10 @@ export async function deleteTrackerFromFirebase(trackingId: string): Promise<boo
 
 // Create or update user in Firestore
 export async function createOrUpdateUser(userId: string, email: string, displayName?: string): Promise<User | null> {
+  if (!isAuthenticated()) {
+    console.warn('User not authenticated, skipping Firestore user update');
+    return null;
+  }
   try {
     const userRef = doc(db, USERS_COLLECTION, userId);
     const userDoc = await getDoc(userRef);
@@ -206,6 +243,10 @@ export async function createOrUpdateUser(userId: string, email: string, displayN
 
 // Get all users
 export async function getUsersFromFirebase(): Promise<User[]> {
+  if (!isAuthenticated()) {
+    console.warn('User not authenticated, skipping Firestore read');
+    return [];
+  }
   try {
     const usersRef = collection(db, USERS_COLLECTION);
     const snapshot = await getDocs(usersRef);

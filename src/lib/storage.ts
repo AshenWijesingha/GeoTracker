@@ -54,6 +54,10 @@ export async function getTrackersAsync(): Promise<Tracker[]> {
   try {
     return await getTrackersFromFirebase();
   } catch (error) {
+    // Check if it's a permissions error - propagate it rather than silently falling back
+    if (error instanceof Error && error.message.includes('insufficient permissions')) {
+      throw error;
+    }
     console.error('Firebase error, falling back to localStorage:', error);
     return getTrackers();
   }
@@ -76,6 +80,9 @@ export async function createTrackerAsync(name: string): Promise<Tracker | null> 
     const tracker = await createTrackerInFirebase(name, trackerId);
     return tracker;
   } catch (error) {
+    if (error instanceof Error && error.message.includes('insufficient permissions')) {
+      throw error;
+    }
     console.error('Firebase error, falling back to localStorage:', error);
     return createTracker(name);
   }
@@ -106,6 +113,9 @@ export async function deleteTrackerAsync(trackingId: string): Promise<boolean> {
   try {
     return await deleteTrackerFromFirebase(trackingId);
   } catch (error) {
+    if (error instanceof Error && error.message.includes('insufficient permissions')) {
+      throw error;
+    }
     console.error('Firebase error, falling back to localStorage:', error);
     return deleteTracker(trackingId);
   }
