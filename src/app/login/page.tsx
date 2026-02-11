@@ -52,8 +52,23 @@ export default function LoginPage() {
   return (
     <div className={styles.loginBg}>
       <div className={styles.container}>
-        <div className={styles.logo}>🎯</div>
-        <h1>Cyber Tracker</h1>
+        <div className={styles.logo}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="https://res.cloudinary.com/dkj22lm1g/image/upload/v1770788944/GeoTracker_fbqxq1.webp"
+            alt="GeoTracker Logo"
+            width={80}
+            height={80}
+            className={styles.logoImage}
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = 'none';
+              const fallback = document.createElement('span');
+              fallback.textContent = '🎯';
+              (e.target as HTMLImageElement).parentElement?.appendChild(fallback);
+            }}
+          />
+        </div>
+        <h1>GeoTracker</h1>
         <p className={styles.subtitle}>
           Advanced geolocation surveillance system
         </p>
