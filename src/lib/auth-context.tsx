@@ -33,9 +33,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
+      const unsubscribe = onAuthStateChanged(auth, async (user) => {
         setUser(user);
         setLoading(false);
+        // Sync user data to Firestore on auth state change
+        if (user) {
+          try {
+            await createOrUpdateUser(
+              user.uid,
+              user.email || `guest_${user.uid}@anonymous.local`,
+              user.displayName || undefined,
+              user.photoURL || undefined
+            );
+          } catch (err) {
+            console.error('Error syncing user data:', err);
+          }
+        }
       }, (error) => {
         console.error('Auth state change error:', error);
         setError(getFirebaseErrorMessage(error));
@@ -55,7 +68,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(null);
       const result = await signInWithEmailAndPassword(auth, email, password);
       // Update user record in Firestore
-      await createOrUpdateUser(result.user.uid, email, result.user.displayName || undefined);
+      await createOrUpdateUser(
+        result.user.uid,
+        email,
+        result.user.displayName || undefined,
+        result.user.photoURL || undefined
+      );
     } catch (err) {
       const errorMessage = getFirebaseErrorMessage(err);
       setError(errorMessage);
