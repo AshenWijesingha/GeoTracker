@@ -16,12 +16,22 @@ service cloud.firestore {
       allow create: if request.auth != null && 
                       request.resource.data.userId == request.auth.uid;
       
-      allow update, delete: if request.auth != null && 
-                              resource.data.userId == request.auth.uid;
+      allow delete: if request.auth != null && 
+                       resource.data.userId == request.auth.uid;
 
-      // Shared trackers (no userId field) - accessible by anyone with the link
-      // This enables mobile devices and incognito browsers to sync location data
-      allow read, update: if !('userId' in resource.data);
+      // Anyone with the tracker link can read trackers and add location
+      // updates without authentication. The unique tracking ID (UUID)
+      // serves as the access control mechanism for shared tracking.
+      allow read: if true;
+
+      // Updates are allowed for location syncing but must preserve
+      // ownership and metadata fields to prevent tampering.
+      allow update: if request.resource.data.name == resource.data.name
+                    && request.resource.data.created == resource.data.created
+                    && (!('userId' in resource.data)
+                        || request.resource.data.userId == resource.data.userId);
+
+      // Allow creating shared trackers (without userId) for unauthenticated users
       allow create: if !('userId' in request.resource.data);
     }
     
