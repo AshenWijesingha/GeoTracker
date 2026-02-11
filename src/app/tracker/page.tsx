@@ -1,23 +1,18 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
   LocationData,
   DeviceInfo,
-  generateTrackingId,
-  getEnhancedDeviceInfo,
+  getDeviceInfo,
   getIPAddress,
   getCurrentPosition,
   getGeolocationErrorMessage,
-  getOrCreateTrackerAsync,
-  addLocationToTrackerAsync,
 } from '@/lib/storage';
 import styles from './page.module.css';
 
 type Status = 'loading' | 'success' | 'error';
-
-const SESSION_KEY = 'geotracker_standalone_id';
 
 export default function StandaloneTracker() {
   const [status, setStatus] = useState<Status>('loading');
@@ -25,32 +20,6 @@ export default function StandaloneTracker() {
   const [locationData, setLocationData] = useState<LocationData | null>(null);
   const [deviceInfo, setDeviceInfo] = useState<DeviceInfo | null>(null);
   const [ipAddress, setIpAddress] = useState('Scanning...');
-  const [updateCount, setUpdateCount] = useState(0);
-  const trackingIdRef = useRef<string | null>(null);
-  const trackerReadyRef = useRef(false);
-
-  // Save location data to the database
-  const saveLocationToDatabase = useCallback(async (data: LocationData) => {
-    const id = trackingIdRef.current;
-    if (!id || !trackerReadyRef.current) return false;
-
-    const maxRetries = 3;
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
-      try {
-        const success = await addLocationToTrackerAsync(id, data);
-        if (success) {
-          setUpdateCount((prev) => prev + 1);
-          return true;
-        }
-      } catch {
-        // Continue to retry
-      }
-      if (attempt < maxRetries) {
-        await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt)));
-      }
-    }
-    return false;
-  }, []);
 
   const fetchLocation = useCallback(async () => {
     setStatus('loading');
@@ -58,7 +27,7 @@ export default function StandaloneTracker() {
 
     try {
       const position = await getCurrentPosition();
-      const device = await getEnhancedDeviceInfo();
+      const device = getDeviceInfo();
       const ip = await getIPAddress();
 
       const data: LocationData = {
@@ -76,20 +45,11 @@ export default function StandaloneTracker() {
       setStatus('success');
       setStatusMessage('Target location acquired');
 
-      // Store location and device info in the database
-      const saved = await saveLocationToDatabase(data);
-      if (!saved && trackerReadyRef.current) {
-        setStatusMessage('Location acquired but failed to sync to server');
-      }
-    } catch (error: unknown) {
-      if (
-        error &&
-        typeof error === 'object' &&
-        'code' in error &&
-        typeof (error as { code: unknown }).code === 'number' &&
-        'message' in error
-      ) {
-        setStatusMessage(getGeolocationErrorMessage(error as GeolocationPositionError));
+      // Log data to console (standalone mode - no server storage)
+      console.log('Location Data:', data);
+    } catch (error) {
+      if (error instanceof GeolocationPositionError) {
+        setStatusMessage(getGeolocationErrorMessage(error));
       } else if (error instanceof Error) {
         setStatusMessage(error.message);
       } else {
@@ -97,75 +57,17 @@ export default function StandaloneTracker() {
       }
       setStatus('error');
     }
-  }, [saveLocationToDatabase]);
-
-  // Keep a ref to fetchLocation so the effect always calls the latest version
-  const fetchLocationRef = useRef(fetchLocation);
-  fetchLocationRef.current = fetchLocation;
-
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    // Get or create a tracking ID persisted across page refreshes
-    let id: string;
-    let cancelled = false;
-    try {
-      const stored = sessionStorage.getItem(SESSION_KEY);
-      if (stored) {
-        id = stored;
-      } else {
-        id = generateTrackingId();
-        sessionStorage.setItem(SESSION_KEY, id);
-      }
-    } catch {
-      // sessionStorage may be unavailable in private browsing or restricted contexts
-      id = generateTrackingId();
-    }
-    trackingIdRef.current = id;
-
-    getEnhancedDeviceInfo().then(setDeviceInfo);
-    getIPAddress().then(setIpAddress);
-
-    // Initialize tracker in the database, then fetch location
-    const init = async () => {
-      try {
-        await getOrCreateTrackerAsync(id);
-      } catch {
-        // Proceed even if tracker init fails; addLocationToTrackerAsync
-        // can create the document on the fly.
-      }
-      if (cancelled) return;
-      trackerReadyRef.current = true;
-      await fetchLocationRef.current();
-
-      // Set up 15-second auto-update interval
-      if (!cancelled) {
-        intervalRef.current = setInterval(() => {
-          fetchLocationRef.current();
-        }, 15000);
-      }
-    };
-
-    init();
-
-    return () => {
-      cancelled = true;
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    };
   }, []);
 
+  useEffect(() => {
+    const device = getDeviceInfo();
+    setDeviceInfo(device);
+    getIPAddress().then(setIpAddress);
+    fetchLocation();
+  }, [fetchLocation]);
+
   const mapUrl = locationData
-    ? (() => {
-        const params = new URLSearchParams({
-          q: `${locationData.latitude},${locationData.longitude}`,
-          z: '15',
-          output: 'embed'
-        });
-        return `https://maps.google.com/maps?${params.toString()}`;
-      })()
+    ? `https://maps.google.com/maps?q=${locationData.latitude},${locationData.longitude}&z=15&output=embed`
     : '';
 
   return (
@@ -250,20 +152,6 @@ export default function StandaloneTracker() {
                       {deviceInfo.userAgent}
                     </span>
                   </div>
-                  {deviceInfo.batteryLevel !== undefined && (
-                    <div className="device-item">
-                      <span className="device-label">Battery:</span>
-                      <span className="device-value">
-                        {deviceInfo.batteryLevel}% {deviceInfo.batteryCharging ? '⚡ Charging' : '🔋'}
-                      </span>
-                    </div>
-                  )}
-                  {deviceInfo.connectionType && (
-                    <div className="device-item">
-                      <span className="device-label">Connection:</span>
-                      <span className="device-value">{deviceInfo.connectionType.toUpperCase()}</span>
-                    </div>
-                  )}
                 </div>
               </div>
             )}
