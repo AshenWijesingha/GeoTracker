@@ -62,11 +62,12 @@ For production use, update your Firestore security rules:
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow authenticated users to read/write their own trackers
+    // Allow authenticated users to manage trackers
     match /trackers/{trackerId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      allow update, delete: if request.auth != null;
+      // Authenticated users can read, create, and delete trackers
+      allow read, create, delete: if request.auth != null;
+      // Allow anyone to update trackers (for adding location data from shared tracking links)
+      allow update: if true;
     }
     
     // Allow authenticated users to read all users, but only write their own

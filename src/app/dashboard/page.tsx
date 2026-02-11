@@ -21,17 +21,22 @@ export default function Dashboard() {
   const [expandedTracker, setExpandedTracker] = useState<string | null>(null);
   const [baseUrl, setBaseUrl] = useState('');
   const [loading, setLoading] = useState(true);
+  const [permissionError, setPermissionError] = useState(false);
 
   const loadTrackers = useCallback(async () => {
+    if (permissionError) return;
     try {
       const storedTrackers = await getTrackersAsync();
       setTrackers(storedTrackers);
     } catch (error) {
       console.error('Error loading trackers:', error);
+      if (error instanceof Error && error.message.includes('insufficient permissions')) {
+        setPermissionError(true);
+      }
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [permissionError]);
 
   useEffect(() => {
     // Check if user is authenticated
@@ -45,10 +50,12 @@ export default function Dashboard() {
       loadTrackers();
       
       // Auto-refresh every 10 seconds to detect changes
-      const interval = setInterval(loadTrackers, 10000);
-      return () => clearInterval(interval);
+      if (!permissionError) {
+        const interval = setInterval(loadTrackers, 10000);
+        return () => clearInterval(interval);
+      }
     }
-  }, [router, loadTrackers, user, authLoading]);
+  }, [router, loadTrackers, user, authLoading, permissionError]);
 
   const handleCreateTracker = async () => {
     if (!trackerName.trim()) {
@@ -167,7 +174,19 @@ export default function Dashboard() {
 
       <div className={styles.trackersList}>
         <h2>Active Sessions ({trackers.length})</h2>
-        {trackers.length === 0 ? (
+        {permissionError ? (
+          <div className={styles.emptyState}>
+            <div className={styles.emptyStateIcon}>⚠️</div>
+            <p>Unable to access tracker data due to insufficient permissions.</p>
+            <p style={{ marginTop: '10px', color: '#666', fontSize: '14px' }}>
+              Please ensure Firestore security rules are properly configured.
+              See FIREBASE_SETUP.md for setup instructions.
+            </p>
+            <button className="btn" onClick={() => { setPermissionError(false); loadTrackers(); }} style={{ marginTop: '15px' }}>
+              🔄 Retry
+            </button>
+          </div>
+        ) : trackers.length === 0 ? (
           <div className={styles.emptyState}>
             <div className={styles.emptyStateIcon}>📡</div>
             <p>No active tracking sessions. Initialize your first tracker above.</p>
