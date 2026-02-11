@@ -1,4 +1,5 @@
 /** @type {import('next').NextConfig} */
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
 const nextConfig = {
   // Enable static export for GitHub Pages deployment
   output: 'export',
@@ -6,9 +7,8 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // For deployment, set this to your base path if needed
-  basePath: process.env.NEXT_PUBLIC_BASE_PATH || '',
-  assetPrefix: process.env.NEXT_PUBLIC_BASE_PATH || '',
+  basePath: basePath,
+  assetPrefix: basePath ? `${basePath}/` : '',
 };
 
 module.exports = nextConfig;
