@@ -9,6 +9,7 @@ import {
   signInAnonymously,
   signOut,
   updateProfile,
+  sendPasswordResetEmail,
 } from 'firebase/auth';
 import { auth } from './firebase';
 import { createOrUpdateUser } from './firebase-services';
@@ -20,6 +21,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, displayName?: string) => Promise<void>;
   signInAsGuest: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   logout: () => Promise<void>;
   error: string | null;
 }
@@ -116,6 +118,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      setError(null);
+      // Firebase emails the user a secure reset link. For privacy, the caller
+      // shows the same confirmation whether or not the address has an account,
+      // so this never reveals which emails are registered.
+      await sendPasswordResetEmail(auth, email);
+    } catch (err) {
+      const errorMessage = getFirebaseErrorMessage(err);
+      setError(errorMessage);
+      console.error('Password reset error:', err);
+      throw err;
+    }
+  };
+
   const logout = async () => {
     try {
       setError(null);
@@ -129,7 +146,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signInAsGuest, logout, error }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signUp, signInAsGuest, resetPassword, logout, error }}>
       {children}
     </AuthContext.Provider>
   );

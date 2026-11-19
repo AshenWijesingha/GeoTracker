@@ -238,3 +238,41 @@
   font-size: 13px;
   color: #ff4444;
 }
+
+.successBox {
+  background: rgba(0, 255, 136, 0.1);
+  border: 1px solid rgba(0, 255, 136, 0.5);
+  border-radius: 4px;
+  padding: 12px;
+  margin-bottom: 20px;
+  text-align: left;
+  font-size: 13px;
+  color: #00ff88;
+  line-height: 1.5;
+}
+
+.labelRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.linkBtn {
+  background: none;
+  border: none;
+  color: #00ccff;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 0;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.linkBtn:hover,
+.linkBtn:focus-visible {
+  color: #00ff88;
+  text-decoration: underline;
+  outline: none;
+}
