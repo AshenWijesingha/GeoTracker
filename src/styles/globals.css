@@ -297,3 +297,48 @@ body {
   font-weight: 500;
   font-size: 14px;
 }
+
+/* Accessibility helpers */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--cyber-secondary);
+  outline-offset: 2px;
+}
+
+/* Leaflet popups in the cyber theme */
+.leaflet-container {
+  font-family: 'Share Tech Mono', 'Courier New', monospace;
+  background: #0a0a1a;
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: rgba(10, 10, 26, 0.95);
+  color: var(--cyber-text);
+  border: 1px solid var(--cyber-border);
+}
+
+.leaflet-control-layers {
+  background: rgba(10, 10, 26, 0.92) !important;
+  color: var(--cyber-text) !important;
+  border: 1px solid var(--cyber-border) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

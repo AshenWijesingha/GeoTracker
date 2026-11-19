@@ -30,6 +30,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Type check and unit tests
+        run: npm run check
+
       - name: Build with Next.js
         run: npm run build
         env:

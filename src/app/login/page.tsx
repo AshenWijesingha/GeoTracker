@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { getFirebaseErrorMessage } from '@/lib/firebase-errors';
@@ -8,7 +8,7 @@ import styles from './page.module.css';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { signIn, signUp, signInAsGuest, error: authError } = useAuth();
+  const { user, loading: authLoading, signIn, signUp, signInAsGuest, error: authError } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -16,6 +16,11 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [logoFailed, setLogoFailed] = useState(false);
+
+  // Already signed in (session restored from IndexedDB) → skip the form.
+  useEffect(() => {
+    if (!authLoading && user) router.replace('/dashboard');
+  }, [authLoading, user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

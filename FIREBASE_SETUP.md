@@ -51,33 +51,36 @@ You need to enable **TWO** authentication methods for GeoTracker to work:
 4. Select a Cloud Firestore location (choose the one closest to your users)
 5. Click **"Enable"**
 
-### 5. Set Firestore Security Rules
+### 5. Deploy the Firestore Security Rules (required for v3)
 
-For production use, update your Firestore security rules:
+GeoTracker v3 stores location history in `trackers/{id}/points` and chat in
+`trackers/{id}/messages`. **These sub-collections only work after you deploy the
+rules in [`firestore.rules`](./firestore.rules).** Without them the dashboard
+shows "History unavailable" and the chat panel shows "Chat is unavailable".
 
-1. Go to **Firestore Database** > **Rules** tab
-2. Replace with the following secure rules:
+Option A — Firebase CLI (recommended):
 
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // Allow authenticated users to manage trackers
-    match /trackers/{trackerId} {
-      // Authenticated users can read, create, and delete trackers
-      allow read, create, delete: if request.auth != null;
-      // Allow anyone to update trackers (for adding location data from shared tracking links)
-      allow update: if true;
-    }
-    
-    // Allow authenticated users to read all users, but only write their own
-    match /users/{userId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-  }
-}
+```bash
+npm install -g firebase-tools
+firebase login
+firebase use geotrackerpro-e3149
+firebase deploy --only firestore:rules
 ```
+
+Option B — Console: open **Firestore Database → Rules**, paste the full contents
+of `firestore.rules`, and click **Publish**.
+
+What the rules enforce:
+
+| Path | Read | Write |
+| --- | --- | --- |
+| `users/{uid}` | signed-in users | only that user |
+| `trackers/{id}` | anyone with the link | owner creates/deletes; devices update the summary but can't change name, creation date or owner |
+| `trackers/{id}/points/*` | anyone with the link | append-only, validated coordinates; owner can delete |
+| `trackers/{id}/messages/*` | anyone with the link | text ≤ 500 chars; `owner` messages only from the owner; server timestamp required |
+
+The unguessable tracker ID (a UUID) works like a password: anyone who has the
+link can see that tracker's location. Share links only with people you trust.
 
 3. Click **"Publish"** to save the rules
 
