@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
-import { getUsersFromFirebase, User } from '@/lib/firebase-services';
+import { subscribeToUsers, User } from '@/lib/firebase-services';
 import styles from './page.module.css';
 
 export default function UsersPage() {
@@ -20,20 +20,18 @@ export default function UsersPage() {
       return;
     }
 
-    const loadUsers = async () => {
-      try {
-        const fetchedUsers = await getUsersFromFirebase();
-        setUsers(fetchedUsers);
-      } catch (error) {
-        console.error('Error loading users:', error);
-      } finally {
+    if (!user) return;
+    // Realtime registry: new sign-ups and logins appear instantly.
+    return subscribeToUsers(
+      (list) => {
+        setUsers(list);
         setLoading(false);
-      }
-    };
-
-    if (user) {
-      loadUsers();
-    }
+      },
+      (error) => {
+        console.error('Error loading users:', error);
+        setLoading(false);
+      },
+    );
   }, [router, user, authLoading]);
 
   if (authLoading || loading) {

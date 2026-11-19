@@ -1,5 +1,9 @@
-// Storage utility for client-side data persistence
-// Uses Firebase Firestore as the primary backend with localStorage fallback
+// Client-side helpers: tracker ID generation, device fingerprinting and
+// geolocation wrappers, plus thin async wrappers over the Firestore services.
+//
+// Offline support is provided by Firestore's persistent IndexedDB cache (see
+// firebase.ts), so the old localStorage mirror is no longer needed: writes made
+// offline are queued and replayed automatically.
 
 import {
   getTrackersFromFirebase,
@@ -8,259 +12,74 @@ import {
   getOrCreateTrackerInFirebase,
   addLocationToTrackerInFirebase,
   deleteTrackerFromFirebase,
+  type LocationExtras,
 } from './firebase-services';
+import type { DeviceInfo, LocationData, Tracker } from './types';
 
-export interface DeviceInfo {
-  browser: string;
-  os: string;
-  platform: string;
-  screen: string;
-  userAgent: string;
-}
+export type { DeviceInfo, LocationData, Tracker } from './types';
 
-export interface LocationData {
-  latitude: number;
-  longitude: number;
-  accuracy: number;
-  timestamp: string;
-  deviceInfo?: DeviceInfo;
-  ip?: string;
-}
-
-export interface Tracker {
-  id: string;
-  name: string;
-  created: string;
-  locations: LocationData[];
-}
-
-const STORAGE_KEY = 'geotracker_data';
-
-// Generate unique tracking ID using crypto for better randomness
 export function generateTrackingId(): string {
-  if (typeof window !== 'undefined' && window.crypto && window.crypto.randomUUID) {
+  if (typeof window !== 'undefined' && window.crypto?.randomUUID) {
     return 'track_' + window.crypto.randomUUID();
   }
-  // Fallback for older browsers
   return 'track_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11);
 }
 
 // ==========================================
-// Firebase-based async functions (primary)
+// Firebase-backed async API
 // ==========================================
 
-// Get all trackers from Firebase
-export async function getTrackersAsync(): Promise<Tracker[]> {
-  try {
-    return await getTrackersFromFirebase();
-  } catch (error) {
-    // Check if it's a permissions error - propagate it rather than silently falling back
-    if (error instanceof Error && error.message.includes('insufficient permissions')) {
-      throw error;
-    }
-    console.error('Firebase error, falling back to localStorage:', error);
-    return getTrackers();
-  }
-}
+export const getTrackersAsync = (): Promise<Tracker[]> => getTrackersFromFirebase();
 
-// Get a specific tracker by ID from Firebase
-export async function getTrackerAsync(trackingId: string): Promise<Tracker | null> {
-  try {
-    return await getTrackerFromFirebase(trackingId);
-  } catch (error) {
-    console.error('Firebase error, falling back to localStorage:', error);
-    return getTracker(trackingId) || null;
-  }
-}
+export const getTrackerAsync = (trackingId: string): Promise<Tracker | null> =>
+  getTrackerFromFirebase(trackingId);
 
-// Create a new tracker in Firebase
-export async function createTrackerAsync(name: string): Promise<Tracker | null> {
-  const trackerId = generateTrackingId();
-  try {
-    const tracker = await createTrackerInFirebase(name, trackerId);
-    return tracker;
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('insufficient permissions')) {
-      throw error;
-    }
-    console.error('Firebase error, falling back to localStorage:', error);
-    return createTracker(name);
-  }
-}
+export const createTrackerAsync = (name: string): Promise<Tracker | null> =>
+  createTrackerInFirebase(name, generateTrackingId());
 
-// Get or create a tracker by ID in Firebase (for shared links)
-export async function getOrCreateTrackerAsync(trackingId: string): Promise<Tracker | null> {
-  try {
-    return await getOrCreateTrackerInFirebase(trackingId);
-  } catch (error) {
-    console.error('Firebase error, falling back to localStorage:', error);
-    return getOrCreateTracker(trackingId);
-  }
-}
+export const getOrCreateTrackerAsync = (trackingId: string, name?: string): Promise<Tracker | null> =>
+  getOrCreateTrackerInFirebase(trackingId, name);
 
-// Add location to a tracker in Firebase
-export async function addLocationToTrackerAsync(trackingId: string, location: LocationData): Promise<boolean> {
-  try {
-    return await addLocationToTrackerInFirebase(trackingId, location);
-  } catch (error) {
-    console.error('Firebase error, falling back to localStorage:', error);
-    return addLocationToTracker(trackingId, location);
-  }
-}
+export const addLocationToTrackerAsync = (
+  trackingId: string,
+  location: LocationData,
+  extras?: LocationExtras,
+): Promise<boolean> => addLocationToTrackerInFirebase(trackingId, location, extras);
 
-// Delete a tracker from Firebase
-export async function deleteTrackerAsync(trackingId: string): Promise<boolean> {
-  try {
-    return await deleteTrackerFromFirebase(trackingId);
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('insufficient permissions')) {
-      throw error;
-    }
-    console.error('Firebase error, falling back to localStorage:', error);
-    return deleteTracker(trackingId);
-  }
-}
+export const deleteTrackerAsync = (trackingId: string): Promise<boolean> =>
+  deleteTrackerFromFirebase(trackingId);
 
 // ==========================================
-// LocalStorage-based sync functions (fallback)
+// Device helpers
 // ==========================================
 
-// Get all trackers from localStorage
-export function getTrackers(): Tracker[] {
-  if (typeof window === 'undefined') return [];
-  
-  try {
-    const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
-  } catch {
-    return [];
-  }
-}
-
-// Save trackers to localStorage
-export function saveTrackers(trackers: Tracker[]): void {
-  if (typeof window === 'undefined') return;
-  
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(trackers));
-  } catch (error) {
-    console.error('Error saving trackers:', error);
-  }
-}
-
-// Create a new tracker
-export function createTracker(name: string): Tracker {
-  const tracker: Tracker = {
-    id: generateTrackingId(),
-    name: name || 'Unnamed Tracker',
-    created: new Date().toISOString(),
-    locations: [],
-  };
-
-  const trackers = getTrackers();
-  trackers.push(tracker);
-  saveTrackers(trackers);
-
-  return tracker;
-}
-
-// Create a tracker with a specific ID (for shared links)
-export function createTrackerWithId(trackingId: string, name: string = 'Shared Tracker'): Tracker {
-  const tracker: Tracker = {
-    id: trackingId,
-    name: name,
-    created: new Date().toISOString(),
-    locations: [],
-  };
-
-  const trackers = getTrackers();
-  trackers.push(tracker);
-  saveTrackers(trackers);
-
-  return tracker;
-}
-
-// Get a specific tracker by ID
-export function getTracker(trackingId: string): Tracker | undefined {
-  const trackers = getTrackers();
-  return trackers.find(t => t.id === trackingId);
-}
-
-// Get or create a tracker by ID (for shared links)
-export function getOrCreateTracker(trackingId: string): Tracker {
-  let tracker = getTracker(trackingId);
-  if (!tracker) {
-    tracker = createTrackerWithId(trackingId);
-  }
-  return tracker;
-}
-
-// Add location to a tracker
-export function addLocationToTracker(trackingId: string, location: LocationData): boolean {
-  const trackers = getTrackers();
-  const tracker = trackers.find(t => t.id === trackingId);
-
-  if (tracker) {
-    tracker.locations.push(location);
-    saveTrackers(trackers);
-    return true;
-  }
-
-  return false;
-}
-
-// Delete a tracker
-export function deleteTracker(trackingId: string): boolean {
-  const trackers = getTrackers();
-  const index = trackers.findIndex(t => t.id === trackingId);
-
-  if (index !== -1) {
-    trackers.splice(index, 1);
-    saveTrackers(trackers);
-    return true;
-  }
-
-  return false;
-}
-
-// Get device info from browser
 export function getDeviceInfo(): DeviceInfo {
   if (typeof window === 'undefined') {
-    return {
-      browser: 'Unknown',
-      os: 'Unknown',
-      platform: 'Unknown',
-      screen: 'Unknown',
-      userAgent: 'Unknown',
-    };
+    return { browser: 'Unknown', os: 'Unknown', platform: 'Unknown', screen: 'Unknown', userAgent: 'Unknown' };
   }
 
   const userAgent = navigator.userAgent;
 
-  // Detect browser - check Edge/Opera before Chrome since they include 'Chrome' in UA
+  // Edge/Opera/Samsung include "Chrome" in their UA so check them first.
   let browser = 'Unknown';
-  if (userAgent.indexOf('Edg') > -1) {
-    browser = 'Edge';
-  } else if (userAgent.indexOf('OPR') > -1 || userAgent.indexOf('Opera') > -1) {
-    browser = 'Opera';
-  } else if (userAgent.indexOf('Firefox') > -1) {
-    browser = 'Firefox';
-  } else if (userAgent.indexOf('Chrome') > -1 || userAgent.indexOf('CriOS') > -1) {
-    browser = 'Chrome';
-  } else if (userAgent.indexOf('Safari') > -1) {
-    browser = 'Safari';
-  }
+  if (userAgent.includes('Edg')) browser = 'Edge';
+  else if (userAgent.includes('OPR') || userAgent.includes('Opera')) browser = 'Opera';
+  else if (userAgent.includes('SamsungBrowser')) browser = 'Samsung Internet';
+  else if (userAgent.includes('Firefox') || userAgent.includes('FxiOS')) browser = 'Firefox';
+  else if (userAgent.includes('Chrome') || userAgent.includes('CriOS')) browser = 'Chrome';
+  else if (userAgent.includes('Safari')) browser = 'Safari';
 
-  // Detect OS - check mobile OS before desktop (Android UA contains 'Linux', iOS UA contains 'Mac')
+  // Mobile OSes first: Android UAs contain "Linux", iOS UAs contain "Mac".
   let os = 'Unknown';
-  if (userAgent.indexOf('Android') > -1) os = 'Android';
-  else if (userAgent.indexOf('iPhone') > -1 || userAgent.indexOf('iPad') > -1 || userAgent.indexOf('iPod') > -1) os = 'iOS';
-  else if (userAgent.indexOf('Win') > -1) os = 'Windows';
-  else if (userAgent.indexOf('Mac') > -1) os = 'MacOS';
-  else if (userAgent.indexOf('Linux') > -1) os = 'Linux';
+  const isIPadOS = /Macintosh/.test(userAgent) && navigator.maxTouchPoints > 1;
+  if (userAgent.includes('Android')) os = 'Android';
+  else if (/iPhone|iPad|iPod/.test(userAgent) || isIPadOS) os = 'iOS';
+  else if (userAgent.includes('Win')) os = 'Windows';
+  else if (userAgent.includes('CrOS')) os = 'ChromeOS';
+  else if (userAgent.includes('Mac')) os = 'MacOS';
+  else if (userAgent.includes('Linux')) os = 'Linux';
 
-  // Detect if mobile device
-  const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+  const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(userAgent) || isIPadOS;
 
   return {
     browser,
@@ -271,43 +90,52 @@ export function getDeviceInfo(): DeviceInfo {
   };
 }
 
-// Get IP address (using free API)
-export async function getIPAddress(): Promise<string> {
-  try {
-    const response = await fetch('https://api.ipify.org?format=json');
-    const data = await response.json();
-    return data.ip;
-  } catch {
-    return 'Unable to fetch';
+let ipPromise: Promise<string> | null = null;
+
+/** Public IP address, fetched once per page load and cached. */
+export function getIPAddress(): Promise<string> {
+  if (!ipPromise) {
+    ipPromise = (async () => {
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 5000);
+        const response = await fetch('https://api.ipify.org?format=json', { signal: controller.signal });
+        clearTimeout(timer);
+        const data = await response.json();
+        return typeof data.ip === 'string' ? data.ip : 'Unavailable';
+      } catch {
+        ipPromise = null; // allow a retry later
+        return 'Unavailable';
+      }
+    })();
   }
+  return ipPromise;
 }
 
-// Get current geolocation
-export function getCurrentPosition(): Promise<GeolocationPosition> {
+export function getCurrentPosition(options?: PositionOptions): Promise<GeolocationPosition> {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
       reject(new Error('Geolocation is not supported by your browser'));
       return;
     }
-
     navigator.geolocation.getCurrentPosition(resolve, reject, {
       enableHighAccuracy: true,
       timeout: 30000,
       maximumAge: 5000,
+      ...options,
     });
   });
 }
 
-// Get geolocation error message
 export function getGeolocationErrorMessage(error: GeolocationPositionError): string {
   switch (error.code) {
     case error.PERMISSION_DENIED:
-      return 'Location access denied. Please allow location permissions in your browser settings.';
+      return 'Location access denied. Allow location permission for this site in your browser settings, then press Retry.';
     case error.POSITION_UNAVAILABLE:
-      return 'Location information is unavailable.';
+      return 'Location information is unavailable. Make sure location services (GPS) are switched on.';
     case error.TIMEOUT:
-      return 'Location request timed out. Please try again.';
+      return 'Location request timed out. Move to an open area and try again.';
     default:
-      return 'An unknown error occurred.';
+      return 'An unknown location error occurred.';
   }
 }

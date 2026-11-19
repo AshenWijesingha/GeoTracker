@@ -1,0 +1,99 @@
+.sos {
+  position: relative;
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  background: radial-gradient(circle at 35% 35%, #ff6688, #cc0033);
+  color: #fff;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 800;
+  font-size: 26px;
+  letter-spacing: 2px;
+  box-shadow: 0 0 25px rgba(255, 51, 102, 0.6);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.sos:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.sos:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 4px;
+}
+
+.ring {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: conic-gradient(#fff var(--progress, 0deg), transparent 0);
+  -webkit-mask: radial-gradient(circle, transparent 58px, #000 59px);
+  mask: radial-gradient(circle, transparent 58px, #000 59px);
+}
+
+.label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.1;
+}
+
+.label small {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  margin-top: 4px;
+  font-family: 'Share Tech Mono', monospace;
+}
+
+.activeBox {
+  border: 2px solid var(--cyber-danger);
+  background: rgba(255, 51, 102, 0.12);
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  animation: flash 1.2s ease-in-out infinite;
+}
+
+.activeBox p {
+  font-size: 13px;
+  margin: 8px 0 12px;
+  color: var(--cyber-text);
+}
+
+.activeTitle {
+  font-family: 'Orbitron', sans-serif;
+  color: var(--cyber-danger);
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.cancelBtn {
+  background: transparent;
+  border: 1px solid var(--cyber-text);
+  color: var(--cyber-text);
+  padding: 10px 16px;
+  border-radius: 4px;
+  font-family: inherit;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+@keyframes flash {
+  0%, 100% { box-shadow: 0 0 10px rgba(255, 51, 102, 0.3); }
+  50% { box-shadow: 0 0 30px rgba(255, 51, 102, 0.8); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .activeBox { animation: none; }
+}

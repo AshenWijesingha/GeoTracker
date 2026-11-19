@@ -1,6 +1,13 @@
 // Firebase configuration and initialization
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getFirestore, Firestore } from 'firebase/firestore';
+import {
+  getFirestore,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  memoryLocalCache,
+  Firestore,
+} from 'firebase/firestore';
 import { getAuth, Auth } from 'firebase/auth';
 
 // Firebase configuration
@@ -42,15 +49,30 @@ try {
   // Initialize Firebase (singleton pattern to prevent multiple initializations)
   app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
   
-  // Initialize Firestore
-  db = getFirestore(app);
+  // Initialize Firestore.
+  // In the browser we enable the IndexedDB-backed persistent cache: reads are
+  // served from cache instantly, and writes made while offline (e.g. location
+  // fixes on a phone that loses signal) are queued and synced automatically
+  // when the connection returns. During static pre-rendering we use memory.
+  try {
+    db = initializeFirestore(app, {
+      localCache:
+        typeof window !== 'undefined' && typeof indexedDB !== 'undefined'
+          ? persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+          : memoryLocalCache(),
+      ignoreUndefinedProperties: true,
+    });
+  } catch {
+    // initializeFirestore throws if it was already called (hot reload).
+    db = getFirestore(app);
+  }
   
   // Initialize Auth
   auth = getAuth(app);
   
-  console.log('✅ Firebase initialized successfully');
-  console.log('📱 Project ID:', firebaseConfig.projectId);
-  console.log('🔐 Auth Domain:', firebaseConfig.authDomain);
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('✅ Firebase initialized:', firebaseConfig.projectId);
+  }
 } catch (error) {
   console.error('❌ Firebase initialization error:', error);
   console.error('');

@@ -1,0 +1,23 @@
+{
+  "name": "GeoTracker — Real-time Location Tracking",
+  "short_name": "GeoTracker",
+  "description": "Consent-based real-time location sharing with live maps, SOS alerts, battery monitoring and chat.",
+  "id": "./",
+  "start_url": "./dashboard/",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#050510",
+  "theme_color": "#050510",
+  "categories": ["navigation", "utilities", "travel"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ],
+  "shortcuts": [
+    { "name": "Dashboard", "url": "./dashboard/" },
+    { "name": "Quick Track", "url": "./tracker/" }
+  ]
+}

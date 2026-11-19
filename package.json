@@ -1,37 +1,50 @@
 {
   "name": "geotracker",
-  "version": "2.0.0",
-  "description": "Browser-based location tracking application with Next.js and Firebase backend",
+  "version": "3.0.0",
+  "description": "Real-time, consent-based location tracking PWA built with Next.js, Leaflet and Firebase",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
+    "start": "npx serve out",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "npm run typecheck && npm test",
     "export": "next build"
   },
   "keywords": [
-    "location",
-    "tracking",
+    "firebase",
     "geolocation",
     "gps",
+    "leaflet",
+    "location",
     "nextjs",
-    "firebase"
+    "pwa",
+    "realtime",
+    "sos",
+    "tracking"
   ],
   "author": "",
   "license": "MIT",
   "dependencies": {
     "firebase": "^11.3.0",
+    "leaflet": "^1.9.4",
     "next": "^15.2.9",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.3",
+    "@types/leaflet": "^1.9.12",
     "@types/node": "^20.11.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "eslint": "9.39.2",
     "eslint-config-next": "16.1.6",
-    "typescript": "^5.3.0"
+    "typescript": "^5.3.0",
+    "vitest": "^2.1.9"
+  },
+  "engines": {
+    "node": ">=18.18"
   }
 }

@@ -1,45 +1,91 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function trackerDoc(trackerId) {
+      return get(/databases/$(database)/documents/trackers/$(trackerId));
+    }
+
+    function isTrackerOwner(trackerId) {
+      return signedIn() && trackerDoc(trackerId).data.get('userId', null) == request.auth.uid;
+    }
+
+    function validLatLng(d) {
+      return d.latitude is number && d.longitude is number
+        && d.latitude >= -90 && d.latitude <= 90
+        && d.longitude >= -180 && d.longitude <= 180;
+    }
+
     // Users collection - authenticated users can read all user documents,
     // but can only write their own document
     match /users/{userId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow read: if signedIn();
+      allow write: if signedIn() && request.auth.uid == userId;
     }
-    
-    // Trackers collection
-    match /trackers/{trackerId} {
-      // Authenticated user owns the tracker
-      allow read: if request.auth != null && 
-                     resource.data.userId == request.auth.uid;
-      
-      allow create: if request.auth != null && 
-                      request.resource.data.userId == request.auth.uid;
-      
-      allow delete: if request.auth != null && 
-                       resource.data.userId == request.auth.uid;
 
-      // Anyone with the tracker link can read trackers and add location
-      // updates without authentication. The unique tracking ID (UUID)
-      // serves as the access control mechanism for shared tracking.
+    // Trackers collection
+    //
+    // Access model: the unguessable tracker ID (UUID) in the tracking link is
+    // the capability. Anyone holding the link can read the tracker and append
+    // location updates; only the owner can delete it.
+    match /trackers/{trackerId} {
       allow read: if true;
 
-      // Updates are allowed for location syncing but must preserve
-      // ownership and metadata fields to prevent tampering.
+      // Owned trackers (created from the dashboard)
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+
+      // Shared trackers (created by a device opening a link / Quick Track)
+      allow create: if !('userId' in request.resource.data);
+
+      // Updates (location summary, battery, status, SOS, claiming an unowned
+      // tracker) must preserve the name, creation date and owner.
       allow update: if request.resource.data.name == resource.data.name
                     && request.resource.data.created == resource.data.created
                     && (!('userId' in resource.data)
-                        || request.resource.data.userId == resource.data.userId);
+                        || request.resource.data.userId == resource.data.userId)
+                    && (!('userId' in request.resource.data)
+                        || 'userId' in resource.data
+                        || (signedIn() && request.resource.data.userId == request.auth.uid));
 
-      // Allow creating shared trackers (without userId) for unauthenticated users
-      allow create: if !('userId' in request.resource.data);
-    }
-    
-    // Location updates subcollection
-    match /trackers/{trackerId}/locations/{locationId} {
-      allow read, write: if request.auth != null;
+      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
+
+      // Location history: one document per fix. Append-only for devices.
+      match /points/{pointId} {
+        allow read: if true;
+        allow create: if validLatLng(request.resource.data)
+                      && request.resource.data.accuracy is number
+                      && request.resource.data.timestamp is string
+                      && request.resource.data.keys().hasOnly(
+                           ['latitude', 'longitude', 'accuracy', 'timestamp',
+                            'speed', 'heading', 'altitude', 'battery']);
+        allow update: if false;
+        allow delete: if isTrackerOwner(trackerId);
+      }
+
+      // Chat between the owner and the tracked device.
+      match /messages/{messageId} {
+        allow read: if true;
+        allow create: if request.resource.data.keys().hasOnly(['text', 'sender', 'senderName', 'createdAt'])
+                      && request.resource.data.text is string
+                      && request.resource.data.text.size() > 0
+                      && request.resource.data.text.size() <= 500
+                      && request.resource.data.senderName is string
+                      && request.resource.data.senderName.size() <= 40
+                      && request.resource.data.createdAt == request.time
+                      && (request.resource.data.sender == 'device'
+                          || (request.resource.data.sender == 'owner' && isTrackerOwner(trackerId)));
+        allow update: if false;
+        allow delete: if isTrackerOwner(trackerId);
+      }
+
+      // Legacy (v1) sub-collection
+      match /locations/{locationId} {
+        allow read, write: if signedIn();
+      }
     }
   }
 }
