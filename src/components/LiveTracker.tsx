@@ -146,8 +146,8 @@ export default function LiveTracker({ trackingId, subtitle, headerExtra }: LiveT
               <Download size={18} />
             </span>
             <span>
-              <strong>Share in the background with the app</strong>
-              <small>The Android app keeps sharing with the screen off. Tap to install.</small>
+              <strong>Share all the time with the app</strong>
+              <small>The Android app keeps sharing in the background and after restarts. Tap to install.</small>
             </span>
           </Link>
         )}

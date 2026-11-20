@@ -76,8 +76,8 @@ export default function DownloadPage() {
         <section className={styles.hero}>
           <h1>Get GeoTracker on your phone</h1>
           <p>
-            Install the Android app to share location in the background, or use any phone&apos;s browser — no install
-            needed.
+            Install the Android app to share location all the time, or use any phone&apos;s browser while the page is open —
+            no install needed.
           </p>
         </section>
 
@@ -91,7 +91,7 @@ export default function DownloadPage() {
               </span>
               <div>
                 <h2>Android app</h2>
-                <p className="muted">Keeps sharing with the screen off. Android 8 or newer.</p>
+                <p className="muted">Shares all the time — in the background and after restarts. Android 8 or newer.</p>
               </div>
             </div>
 
@@ -128,6 +128,10 @@ export default function DownloadPage() {
               <li>
                 <strong>Install.</strong> If Play Protect warns about an unknown app, choose <em>Install anyway</em> — the
                 app isn&apos;t on the Play Store.
+              </li>
+              <li>
+                <strong>Turn sharing on</strong> and, when asked, set location to <em>Allow all the time</em> and allow it
+                to run without battery restrictions. Sharing then stays on until it&apos;s stopped in the app.
               </li>
             </ol>
 

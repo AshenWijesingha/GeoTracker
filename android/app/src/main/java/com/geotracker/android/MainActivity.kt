@@ -48,7 +48,15 @@ class MainActivity : AppCompatActivity() {
 
     private val backgroundPermission = registerForActivityResult(
         ActivityResultContracts.RequestPermission(),
-    ) { render(TrackingState.state.value) }
+    ) {
+        render(TrackingState.state.value)
+        continueAlwaysOnSetup()
+    }
+
+    /** Set while the person is in system settings for an always-on step. */
+    private var setupPending = false
+    private var askedBackground = false
+    private var askedBattery = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,8 +68,6 @@ class MainActivity : AppCompatActivity() {
         binding.deviceNameInput.doAfterTextChanged { text ->
             text?.toString()?.trim()?.takeIf { it.isNotEmpty() }?.let { prefs.deviceName = it }
         }
-        binding.autoStartSwitch.isChecked = prefs.autoStart
-        binding.autoStartSwitch.setOnCheckedChangeListener { _, checked -> prefs.autoStart = checked }
 
         binding.scanButton.setOnClickListener { scanQr() }
         binding.pairButton.setOnClickListener { pairFromInput() }
@@ -73,9 +79,7 @@ class MainActivity : AppCompatActivity() {
         binding.pauseButton.setOnClickListener { TrackingService.send(this, TrackingService.ACTION_PAUSE) }
         binding.stopButton.setOnClickListener { TrackingService.send(this, TrackingService.ACTION_STOP) }
         binding.backgroundButton.setOnClickListener { requestBackgroundLocation() }
-        binding.batteryButton.setOnClickListener {
-            runCatching { startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)) }
-        }
+        binding.batteryButton.setOnClickListener { requestBatteryExemption() }
         binding.consoleButton.setOnClickListener {
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("${BuildConfig.WEB_URL}/dashboard/")))
         }
@@ -207,20 +211,67 @@ class MainActivity : AppCompatActivity() {
 
     private fun startSharing() {
         TrackingService.start(this)
+        // Sharing already works now; next, make sure it can stay on all the time.
+        askedBackground = false
+        askedBattery = false
+        continueAlwaysOnSetup()
+    }
+
+    // ── Always-on setup ───────────────────────────────────────────────────
+    //
+    // Step 1: location "Allow all the time", so Android lets sharing restart
+    //         in the background (after a reboot, or when the watchdog revives it).
+    // Step 2: no battery optimisation, so the system doesn't stop it.
+    // Each step is offered once per Start; the buttons in the sharing card
+    // stay available until both are done.
+
+    private fun continueAlwaysOnSetup() {
+        if (!AlwaysOn.hasForegroundLocation(this)) return
+        when {
+            !AlwaysOn.hasBackgroundLocation(this) && !askedBackground -> {
+                askedBackground = true
+                MaterialAlertDialogBuilder(this)
+                    .setTitle(R.string.always_title)
+                    .setMessage(R.string.always_background_body)
+                    .setPositiveButton(R.string.always_background_action) { _, _ -> requestBackgroundLocation() }
+                    .setNegativeButton(R.string.not_now, null)
+                    .show()
+            }
+            !AlwaysOn.isBatteryUnrestricted(this) && !askedBattery -> {
+                askedBattery = true
+                MaterialAlertDialogBuilder(this)
+                    .setTitle(R.string.always_title)
+                    .setMessage(R.string.always_battery_body)
+                    .setPositiveButton(R.string.always_battery_action) { _, _ -> requestBatteryExemption() }
+                    .setNegativeButton(R.string.not_now, null)
+                    .show()
+            }
+        }
     }
 
     private fun requestBackgroundLocation() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
-        if (!hasPermission(Manifest.permission.ACCESS_FINE_LOCATION) && !hasPermission(Manifest.permission.ACCESS_COARSE_LOCATION)) {
+        if (!AlwaysOn.hasForegroundLocation(this)) {
             // Android requires foreground access before "all the time".
             return requestLocationThenStart()
         }
+        askedBackground = true
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             // Android 11+ only offers "Allow all the time" in system settings.
+            setupPending = true
             startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", packageName, null)))
         } else {
             backgroundPermission.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
         }
+    }
+
+    @SuppressLint("BatteryLife") // Sideloaded app; the person confirms in a system dialog.
+    private fun requestBatteryExemption() {
+        askedBattery = true
+        setupPending = true
+        val direct = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:$packageName"))
+        runCatching { startActivity(direct) }
+            .recoverCatching { startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)) }
     }
 
     // ── SOS (hold 2 s, like the web SosButton) ────────────────────────────
@@ -308,9 +359,16 @@ class MainActivity : AppCompatActivity() {
         binding.errorText.text = s.error
         binding.errorText.visibility = if (s.error.isNullOrBlank()) View.GONE else View.VISIBLE
 
-        val background = Build.VERSION.SDK_INT < Build.VERSION_CODES.Q ||
-            hasPermission(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+        val background = AlwaysOn.hasBackgroundLocation(this)
+        val battery = AlwaysOn.isBatteryUnrestricted(this)
+        binding.alwaysOnText.text = getString(
+            if (background && battery) R.string.always_ready else R.string.always_needs_setup,
+        )
+        binding.alwaysOnText.setTextColor(
+            ContextCompat.getColor(this, if (background && battery) R.color.primary else R.color.warning),
+        )
         binding.backgroundButton.visibility = if (background) View.GONE else View.VISIBLE
+        binding.batteryButton.visibility = if (battery) View.GONE else View.VISIBLE
 
         binding.safeButton.visibility = if (s.sosActive) View.VISIBLE else View.GONE
         binding.sosText.text = when {
@@ -323,6 +381,13 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         render(TrackingState.state.value)
+        // Back from system settings: if sharing is on but was stopped by the
+        // system, bring it back, then offer the next always-on step.
+        AlwaysOn.ensureRunning(this)
+        if (setupPending) {
+            setupPending = false
+            continueAlwaysOnSetup()
+        }
     }
 
     private fun hasPermission(p: String) = ContextCompat.checkSelfPermission(this, p) == PackageManager.PERMISSION_GRANTED

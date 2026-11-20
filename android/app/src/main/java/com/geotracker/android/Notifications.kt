@@ -95,6 +95,7 @@ object Notifications {
             .setContentTitle(context.getString(R.string.notif_resume_title))
             .setContentText(context.getString(R.string.notif_resume_text))
             .setAutoCancel(true)
+            .setOnlyAlertOnce(true)
             .setContentIntent(openApp(context))
             .build()
         post(context, RESUME_ID, n)

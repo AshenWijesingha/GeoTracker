@@ -1,6 +1,6 @@
 # GeoTracker for Android
 
-A small Android app that shares the phone's location with the GeoTracker console (the `/dashboard` of the web app). It runs as a **foreground service**, so it keeps reporting with the screen off and the app closed.
+A small Android app that shares the phone's location with the GeoTracker console (the `/dashboard` of the web app). Once sharing is turned on it stays on **all the time**: in the background, with the screen off, after the app is swiped away, and after reboots and updates. It keeps going until the person pauses or stops it in the app.
 
 > **Safety and privacy.** Only install this on a phone whose owner has agreed to be tracked. Android always shows a notification while sharing is on, and the person can pause or stop it at any time. SOS only alerts the tracker's owner on their dashboard. It does **not** contact emergency services.
 
@@ -20,7 +20,14 @@ Android asks you to allow installs from your browser or file manager the first t
 3. Tap **Start**, read what will be shared and allow location access.
 4. The phone appears on the dashboard map within a few seconds.
 
-To **resume sharing automatically after a reboot**, tap **Allow location "all the time"** and pick that option in Android's settings. Some phone makers also stop background apps aggressively; if updates stop with the screen off, use **Battery optimisation settings** and set GeoTracker to *Unrestricted*.
+After **Start**, the app walks through two steps that let it share all the time:
+
+1. **Location → Allow all the time.** Android only lets a location app restart in the background (after a reboot, or when it was stopped) with this permission.
+2. **Battery → Unrestricted.** Turn off battery optimisation so the system doesn't stop sharing.
+
+The sharing card shows "✓ Shares all the time" once both are done. If either is missing, buttons there open the right setting.
+
+Some phone makers (for example Xiaomi, Huawei, OnePlus and Samsung) add their own background limits. If sharing still stops, allow **Autostart** or **Background activity** for GeoTracker in the phone's settings.
 
 ## How it works
 
@@ -32,6 +39,7 @@ To **resume sharing automatically after a reboot**, tap **Allow location "all th
 | Offline | Fixes are queued on the phone (up to 500) and uploaded in order when the connection returns. |
 | SOS | Writes the same `sos` field as the web SOS button. The app checks every 15 s for the owner's **Acknowledge** and shows a notification. |
 | Status | Start, Pause and Stop set the tracker's `status` to `active`, `paused` or `stopped`, which the dashboard shows. |
+| Always on | The service is sticky, so Android restarts it after a kill. A boot receiver restarts it after a reboot or update, and a WorkManager watchdog checks every 15 minutes. Pausing or stopping turns all of these off. Android's *Force stop* is the only thing that stops it without the app, until the app is next opened. |
 
 Chat with the console isn't in the app yet. Use the web tracker page if you need it.
 

@@ -70,13 +70,13 @@ Version 3 adds the features of [Realtime-Location-Tracker](https://github.com/ma
 - **CI:** type checking, unit tests and a production build on Node 20 and 22, plus an Android build (`.github/workflows/android.yml`).
 
 ### Android app (`android/`)
-- **Runs as a foreground service**, so it keeps reporting with the screen off or the app closed. Android requires the notification that is shown while it runs; it has **Pause** and **Stop** buttons.
+- **Shares all the time once turned on**: in the background, with the screen off, after the app is swiped away, and after reboots and app updates. A watchdog restarts it if Android stops it. It runs as a foreground service, and the notification Android requires stays visible while it runs, with **Pause** and **Stop** buttons.
+- **Guided always-on setup:** after **Start**, the app asks for location access *Allow all the time* and an exemption from battery optimisation. The sharing card shows whether both are done.
 - **Pair by scanning the dashboard's QR code**, pasting a tracking link, opening a tracking link with the app, or creating a **Quick Track ID**.
 - Reports to the **same console** as the web tracker: location, accuracy, speed, heading, battery, motion, device model and status (live, paused, stopped). It writes the same Firestore documents, so the dashboard, alerts, statistics and exports work unchanged.
 - Uses the **same adaptive policy** as the web tracker: 5 s while moving, a 60 s heartbeat while still, 8 m jitter filter. It switches to low-power location while still.
 - **Offline queue** stored on the phone; queued fixes are uploaded in order when the connection returns.
 - **SOS** (hold for 2 s), with a notification when the owner acknowledges it on the dashboard.
-- Optionally **resumes after a reboot** (needs location access "Allow all the time").
 
 ---
 
