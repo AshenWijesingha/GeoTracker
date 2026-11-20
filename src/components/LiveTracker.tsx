@@ -15,6 +15,26 @@ import { classifyBattery, formatFixAge, TRACKING_CONFIG } from '@/lib/geo';
 import type { DeviceInfo, Tracker } from '@/lib/types';
 import SosButton from './SosButton';
 import ChatPanel from './ChatPanel';
+import {
+  AlertCircle,
+  ArrowLeft,
+  BatteryMedium,
+  Download,
+  Info as InfoIcon,
+  MapPin,
+  Navigation,
+  Pause,
+  Play,
+  RefreshCw,
+  Smartphone,
+  Square,
+  Tag,
+  Wifi,
+  WifiOff,
+} from 'lucide-react';
+import { usePlatform } from '@/lib/platform';
+import Brand from './ui/Brand';
+import ThemeToggle from './ui/ThemeToggle';
 import styles from './LiveTracker.module.css';
 
 const LiveMap = dynamic(() => import('./LiveMap'), { ssr: false });
@@ -28,6 +48,7 @@ interface LiveTrackerProps {
 
 export default function LiveTracker({ trackingId, subtitle, headerExtra }: LiveTrackerProps) {
   const t = useLiveTracking(trackingId);
+  const platform = usePlatform();
   const now = useNow(1000);
   const [tracker, setTracker] = useState<Tracker | null>(null);
   const [deviceInfo, setDeviceInfo] = useState<DeviceInfo | null>(null);
@@ -89,68 +110,113 @@ export default function LiveTracker({ trackingId, subtitle, headerExtra }: LiveT
 
   const showConsent = t.phase === 'idle' || t.phase === 'stopped';
 
+  const phaseBadge =
+    t.phase === 'tracking'
+      ? { cls: 'badge-success', label: 'Sharing live' }
+      : t.phase === 'starting'
+        ? { cls: 'badge-accent', label: 'Finding your location…' }
+        : t.phase === 'paused'
+          ? { cls: 'badge-warning', label: 'Paused' }
+          : t.phase === 'error'
+            ? { cls: 'badge-danger', label: 'Problem' }
+            : null;
+
   return (
     <div className={styles.page}>
+      <header className={styles.topbar}>
+        <Brand size={26} />
+        <ThemeToggle />
+      </header>
+
       <main className={styles.container}>
         <header className={styles.header}>
-          <h1>📍 Location Sharing</h1>
+          <h1>Location sharing</h1>
           <p className={styles.subtitle}>{subtitle}</p>
-          {tracker?.name && <p className={styles.trackerName}>Session: {tracker.name}</p>}
+          {tracker?.name && (
+            <p className={styles.trackerName}>
+              <Tag size={14} aria-hidden="true" /> {tracker.name}
+            </p>
+          )}
           {headerExtra}
         </header>
 
+        {platform === 'android' && (
+          <Link href="/download" className={`card ${styles.appBanner}`}>
+            <span className={styles.appBannerIcon} aria-hidden="true">
+              <Download size={18} />
+            </span>
+            <span>
+              <strong>Share in the background with the app</strong>
+              <small>The Android app keeps sharing with the screen off. Tap to install.</small>
+            </span>
+          </Link>
+        )}
+
         {showConsent ? (
-          <section className={styles.consent} aria-labelledby="consent-title">
-            <h2 id="consent-title">{t.phase === 'stopped' ? 'Sharing stopped' : 'Share your location?'}</h2>
-            <p>
-              The owner of this link will see, in real time while this page is open:
-            </p>
-            <ul>
-              <li>Your precise location and movement trail</li>
-              <li>Battery level and charging state</li>
-              <li>Device type, browser and IP address</li>
+          <section className={`card ${styles.consent}`} aria-labelledby="consent-title">
+            <div className={styles.consentIcon} aria-hidden="true">
+              <MapPin size={22} />
+            </div>
+            <h2 id="consent-title">{t.phase === 'stopped' ? 'Sharing is off' : 'Share your location?'}</h2>
+            <p className="muted">While this page is open, the owner of this link will see:</p>
+            <ul className={styles.shareList}>
+              <li>
+                <Navigation size={16} aria-hidden="true" /> Your precise location and route
+              </li>
+              <li>
+                <BatteryMedium size={16} aria-hidden="true" /> Battery level and charging state
+              </li>
+              <li>
+                <Smartphone size={16} aria-hidden="true" /> Device type, browser and IP address
+              </li>
             </ul>
-            <p className={styles.muted}>
-              You can pause or stop sharing at any time. Your browser will ask for location permission.
+            <p className={styles.consentNote}>
+              You can pause or stop at any time. Your browser will ask for permission first.
             </p>
-            <button type="button" className="btn" onClick={t.start}>
-              {t.phase === 'stopped' ? '▶ Start sharing again' : '▶ Start sharing my location'}
+            <button type="button" className="btn btn-lg btn-block" onClick={t.start}>
+              <Play size={16} aria-hidden="true" />
+              {t.phase === 'stopped' ? 'Start sharing again' : 'Start sharing'}
             </button>
           </section>
         ) : (
-          <>
+          <section className={`card ${styles.liveCard}`}>
             <div className={styles.statusBar} role="status">
-              <span className={`${styles.badge} ${t.phase === 'tracking' ? styles.live : t.phase === 'paused' ? styles.paused : t.phase === 'error' ? styles.err : ''}`}>
-                {t.phase === 'tracking' && '● LIVE'}
-                {t.phase === 'starting' && '◌ Acquiring GPS…'}
-                {t.phase === 'paused' && '❚❚ PAUSED'}
-                {t.phase === 'error' && '✗ ERROR'}
-              </span>
+              {phaseBadge && <span className={`badge badge-dot ${phaseBadge.cls}`}>{phaseBadge.label}</span>}
               {t.phase === 'tracking' && (
-                <span className={styles.badge}>{t.motion === 'moving' ? '🚶 Moving · 5s updates' : '🧍 Stationary · 60s heartbeat'}</span>
+                <span className="badge">
+                  {t.motion === 'moving' ? 'Moving · every 5 s' : 'Still · every 60 s'}
+                </span>
               )}
-              <span className={`${styles.badge} ${t.online ? '' : styles.paused}`}>
-                {t.online ? '☁ Online' : '⚠ Offline — queued'}
+              <span className={`badge ${t.online ? '' : 'badge-warning'}`}>
+                {t.online ? <Wifi size={12} aria-hidden="true" /> : <WifiOff size={12} aria-hidden="true" />}
+                {t.online ? 'Online' : 'Offline — will sync later'}
               </span>
-              {t.pending > 0 && <span className={styles.badge}>⟳ {t.pending} syncing</span>}
+              {t.pending > 0 && <span className="badge badge-accent">{t.pending} syncing</span>}
             </div>
 
             {t.error && (
               <div className="status error" role="alert">
-                {t.error}
+                <AlertCircle size={16} aria-hidden="true" />
+                <span>{t.error}</span>
                 {t.phase === 'error' && (
-                  <button type="button" className={styles.inlineBtn} onClick={t.start}>
+                  <button type="button" className={`btn btn-sm btn-secondary ${styles.inlineBtn}`} onClick={t.start}>
                     Retry
                   </button>
                 )}
               </div>
             )}
 
+            {(t.current || t.phase === 'tracking') && (
+              <div className={styles.map}>
+                <LiveMap markers={markers} trail={t.trail} followId="self" height={320} />
+              </div>
+            )}
+
             {t.current && (
               <div className="info-grid">
-                <Info label="Latitude" value={t.current.latitude.toFixed(6)} />
-                <Info label="Longitude" value={t.current.longitude.toFixed(6)} />
-                <Info label="Accuracy" value={`±${t.current.accuracy.toFixed(1)} m`} />
+                <Info label="Latitude" value={t.current.latitude.toFixed(6)} mono />
+                <Info label="Longitude" value={t.current.longitude.toFixed(6)} mono />
+                <Info label="Accuracy" value={`±${t.current.accuracy.toFixed(0)} m`} />
                 <Info label="Fix age" value={formatFixAge(t.current.timestamp, now)} />
                 <Info
                   label="Speed"
@@ -159,9 +225,7 @@ export default function LiveTracker({ trackingId, subtitle, headerExtra }: LiveT
                 <Info
                   label="Battery"
                   value={
-                    t.battery
-                      ? `${Math.round(t.battery.level * 100)}%${t.battery.charging ? ' ⚡' : ''}`
-                      : 'N/A'
+                    t.battery ? `${Math.round(t.battery.level * 100)}%${t.battery.charging ? ' · charging' : ''}` : '—'
                   }
                   tone={batteryState === 'critical' ? 'danger' : batteryState === 'low' ? 'warning' : undefined}
                 />
@@ -170,36 +234,40 @@ export default function LiveTracker({ trackingId, subtitle, headerExtra }: LiveT
               </div>
             )}
 
-            {(t.current || t.phase === 'tracking') && (
-              <LiveMap markers={markers} trail={t.trail} followId="self" height={340} />
-            )}
-
             <div className={styles.actions}>
               {t.phase === 'paused' ? (
                 <button type="button" className="btn" onClick={t.resume}>
-                  ▶ Resume sharing
+                  <Play size={16} aria-hidden="true" /> Resume
                 </button>
               ) : (
                 <button type="button" className="btn btn-secondary" onClick={t.pause} disabled={t.phase === 'error'}>
-                  ❚❚ Pause
+                  <Pause size={16} aria-hidden="true" /> Pause
                 </button>
               )}
-              <button type="button" className="btn btn-secondary" onClick={() => void t.refresh()} disabled={t.phase !== 'tracking'}>
-                🔄 Update now
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => void t.refresh()}
+                disabled={t.phase !== 'tracking'}
+              >
+                <RefreshCw size={16} aria-hidden="true" /> Update now
               </button>
-              <button type="button" className={`btn ${styles.stopBtn}`} onClick={t.stop}>
-                ■ Stop sharing
+              <button type="button" className="btn btn-danger-outline" onClick={t.stop}>
+                <Square size={14} aria-hidden="true" /> Stop sharing
               </button>
             </div>
 
             <label className={styles.toggle}>
               <input type="checkbox" checked={t.keepAwake} onChange={(e) => void t.setKeepAwake(e.target.checked)} />
-              Keep screen awake (more reliable updates on phones)
+              <span>
+                Keep screen awake
+                <small>More reliable updates on phones</small>
+              </span>
             </label>
-          </>
+          </section>
         )}
 
-        <section className={styles.section} aria-labelledby="sos-title">
+        <section className={`card ${styles.section}`} aria-labelledby="sos-title">
           <h2 id="sos-title">Emergency</h2>
           <SosButton
             active={sosActive}
@@ -208,54 +276,59 @@ export default function LiveTracker({ trackingId, subtitle, headerExtra }: LiveT
             onCancel={() => cancelSos(trackingId).catch(() => setSosError('Could not cancel SOS.'))}
           />
           {sosError && <p className={styles.errorText}>{sosError}</p>}
-          {showConsent && <p className={styles.muted}>Start sharing to enable the SOS button.</p>}
+          {showConsent && <p className={styles.sectionHint}>Start sharing to enable the SOS button.</p>}
         </section>
 
-        <section className={styles.section} aria-labelledby="chat-title">
+        <section className={`card ${styles.section}`} aria-labelledby="chat-title">
           <h2 id="chat-title">Messages</h2>
-          <label className={styles.nameField}>
-            Your name
-            <input value={displayName} maxLength={40} onChange={(e) => saveName(e.target.value)} />
-          </label>
+          <div className="field">
+            <label htmlFor="chat-name">Your name</label>
+            <input
+              id="chat-name"
+              className="input"
+              value={displayName}
+              maxLength={40}
+              onChange={(e) => saveName(e.target.value)}
+            />
+          </div>
           <ChatPanel trackingId={trackingId} role="device" senderName={displayName || 'Device'} compact />
         </section>
 
         {deviceInfo && (
-          <details className="device-info">
+          <details className="device-info disclosure">
             <summary>
-              <h3 style={{ display: 'inline' }}>📱 Shared device details</h3>
+              <InfoIcon size={16} aria-hidden="true" /> What this device shares
             </summary>
             <div className="device-details">
               <Row label="Browser" value={deviceInfo.browser} />
-              <Row label="Operating System" value={deviceInfo.os} />
+              <Row label="Operating system" value={deviceInfo.os} />
               <Row label="Platform" value={deviceInfo.platform} />
               <Row label="Screen" value={deviceInfo.screen} />
-              <Row label="IP Address" value={t.ip} />
-              <Row label="User Agent" value={deviceInfo.userAgent} small />
+              <Row label="IP address" value={t.ip} />
+              <Row label="User agent" value={deviceInfo.userAgent} small />
             </div>
           </details>
         )}
 
         <p className={styles.footerNote}>
-          Updates: every {TRACKING_CONFIG.movingIntervalMs / 1000}s while moving, every {TRACKING_CONFIG.idleIntervalMs / 1000}s when still.
-          Keep this page open for continuous sharing.
+          Updates every {TRACKING_CONFIG.movingIntervalMs / 1000} s while moving and every{' '}
+          {TRACKING_CONFIG.idleIntervalMs / 1000} s when still. Keep this page open to keep sharing.
         </p>
 
         <Link href="/login" className={styles.backLink}>
-          ← GeoTracker home
+          <ArrowLeft size={14} aria-hidden="true" /> GeoTracker home
         </Link>
       </main>
     </div>
   );
 }
 
-function Info({ label, value, tone }: { label: string; value: string; tone?: 'warning' | 'danger' }) {
+function Info({ label, value, tone, mono }: { label: string; value: string; tone?: 'warning' | 'danger'; mono?: boolean }) {
   return (
     <div className="info-card">
       <div className="info-label">{label}</div>
       <div
-        className="info-value"
-        style={tone ? { color: tone === 'danger' ? 'var(--cyber-danger)' : 'var(--cyber-warning)' } : undefined}
+        className={`info-value ${mono ? 'mono' : ''} ${tone === 'danger' ? styles.danger : tone === 'warning' ? styles.warning : ''}`}
       >
         {value}
       </div>
@@ -266,10 +339,8 @@ function Info({ label, value, tone }: { label: string; value: string; tone?: 'wa
 function Row({ label, value, small }: { label: string; value: string; small?: boolean }) {
   return (
     <div className="device-item">
-      <span className="device-label">{label}:</span>
-      <span className="device-value" style={small ? { fontSize: '10px', wordBreak: 'break-all' } : undefined}>
-        {value}
-      </span>
+      <span className="device-label">{label}</span>
+      <span className={`device-value ${small ? styles.small : ''}`}>{value}</span>
     </div>
   );
 }

@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="primary">#00FF88</color>
+    <color name="primary">#4F8CFF</color>
+    <color name="secondary">#A0A8B6</color>
+    <color name="sos">#EF4444</color>
 </resources>

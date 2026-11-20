@@ -1,105 +1,122 @@
 .wrapper {
   position: relative;
+  isolation: isolate; /* keep Leaflet's z-indexes below the sticky header */
   width: 100%;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 1px solid rgba(0, 255, 136, 0.3);
-  box-shadow: 0 0 20px rgba(0, 255, 136, 0.15);
-  background: #0a0a1a;
+  background: var(--surface-2);
 }
 
 .map {
   position: absolute;
   inset: 0;
-  z-index: 0;
 }
 
 .loading {
   position: absolute;
   inset: 0;
+  z-index: 500;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--cyber-text-muted);
-  font-size: 13px;
-  letter-spacing: 1px;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
 }
 
 .controls {
   position: absolute;
-  left: 10px;
-  bottom: 28px;
-  z-index: 500;
+  left: var(--space-3);
+  bottom: 34px; /* above Leaflet's scale bar */
+  z-index: 800;
   display: flex;
+  gap: var(--space-2);
+}
+
+.controls button {
+  display: inline-flex;
+  align-items: center;
   gap: 6px;
-}
-
-.controls button,
-.tileWarning button {
-  background: rgba(10, 10, 26, 0.9);
-  color: var(--cyber-primary);
-  border: 1px solid rgba(0, 255, 136, 0.4);
-  border-radius: 4px;
-  padding: 6px 10px;
-  font-family: inherit;
-  font-size: 12px;
+  height: 32px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  box-shadow: var(--shadow-md);
   cursor: pointer;
-  min-height: 32px;
 }
 
-.controls button:hover,
+.controls button:hover {
+  background: var(--surface-2);
+}
+
 .controls button:focus-visible {
-  border-color: var(--cyber-primary);
-  box-shadow: 0 0 10px rgba(0, 255, 136, 0.4);
   outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 .controls .active {
-  background: rgba(0, 255, 136, 0.2);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+}
+
+.controls .active:hover {
+  background: var(--accent-hover);
 }
 
 .tileWarning {
   position: absolute;
-  top: 10px;
+  top: var(--space-3);
   left: 50%;
-  transform: translateX(-50%);
-  z-index: 500;
-  background: rgba(255, 204, 0, 0.15);
-  border: 1px solid var(--cyber-warning);
-  color: var(--cyber-warning);
-  padding: 8px 12px;
-  border-radius: 4px;
-  font-size: 12px;
+  z-index: 800;
   max-width: calc(100% - 120px);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--warning-soft);
+  color: var(--warning-text);
+  font-size: var(--text-xs);
   text-align: center;
+  transform: translateX(-50%);
+  box-shadow: var(--shadow-md);
 }
 
+.tileWarning button {
+  border: none;
+  background: none;
+  color: inherit;
+  font-weight: var(--weight-semibold);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Marker: white-ringed dot in the status colour, with a soft halo. */
 .pin {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--pin) 25%, transparent);
-  border: 2px solid var(--pin);
-  box-shadow: 0 0 12px var(--pin);
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--pin) 22%, transparent);
 }
 
 .pin span {
-  width: 8px;
-  height: 8px;
+  width: 14px;
+  height: 14px;
+  border: 2.5px solid #fff;
   border-radius: 50%;
   background: var(--pin);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
 }
 
 .pinSos {
-  animation: sosPulse 0.9s ease-in-out infinite;
+  animation: sosPulse 1.2s ease-out infinite;
 }
 
 @keyframes sosPulse {
-  0%, 100% { transform: scale(1); box-shadow: 0 0 10px var(--pin); }
-  50% { transform: scale(1.5); box-shadow: 0 0 30px var(--pin); }
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--pin) 60%, transparent); }
+  100% { box-shadow: 0 0 0 16px transparent; }
 }
 
 @media (prefers-reduced-motion: reduce) {

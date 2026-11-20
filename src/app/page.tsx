@@ -15,8 +15,8 @@ export default function Home() {
   }, [router, user, loading]);
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-      <div className="spinner"></div>
+    <div className="page-center">
+      <div className="spinner" role="status" aria-label="Loading" />
     </div>
   );
 }

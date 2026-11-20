@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import LiveTracker from '@/components/LiveTracker';
 import QrCodeDialog from '@/components/QrCodeDialog';
 import { generateTrackingId } from '@/lib/storage';
+import { Check, Copy, QrCode } from 'lucide-react';
 import styles from './page.module.css';
 
 const SESSION_KEY = 'standalone_tracker_id';
@@ -34,10 +35,8 @@ export default function StandaloneTracker() {
 
   if (!trackingId) {
     return (
-      <div className={styles.gradientBg}>
-        <div className={styles.container}>
-          <div className="spinner"></div>
-        </div>
+      <div className="page-center">
+        <div className="spinner" role="status" aria-label="Loading" />
       </div>
     );
   }
@@ -52,28 +51,27 @@ export default function StandaloneTracker() {
   return (
     <LiveTracker
       trackingId={trackingId}
-      subtitle="Quick Track — share this device's location"
+      subtitle="Quick Track — share this device's location without setting up a tracker first."
       headerExtra={
         <>
-          <p style={{ marginTop: 8, fontSize: 12, color: 'var(--cyber-text-muted)', wordBreak: 'break-all' }}>
-            Session ID: <code>{trackingId}</code>{' '}
-            <button
-              type="button"
-              onClick={copy}
-              style={{ background: 'none', border: '1px solid var(--cyber-border)', color: 'var(--cyber-primary)', borderRadius: 4, padding: '2px 8px', cursor: 'pointer', fontFamily: 'inherit' }}
-            >
-              {copied ? 'Copied ✓' : 'Copy'}
-            </button>{' '}
-            <button
-              type="button"
-              onClick={() => setShowQr(true)}
-              style={{ background: 'none', border: '1px solid var(--cyber-border)', color: 'var(--cyber-primary)', borderRadius: 4, padding: '2px 8px', cursor: 'pointer', fontFamily: 'inherit' }}
-            >
-              QR
-            </button>
-            <br />
-            Add this ID on your dashboard (&quot;Link existing tracker&quot;) to watch it live.
-          </p>
+          <div className={styles.session}>
+            <div className={styles.sessionTop}>
+              <span className={styles.sessionLabel}>Session ID</span>
+              <div className={styles.sessionActions}>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={copy}>
+                  {copied ? <Check size={14} aria-hidden="true" /> : <Copy size={14} aria-hidden="true" />}
+                  {copied ? 'Copied' : 'Copy'}
+                </button>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => setShowQr(true)}>
+                  <QrCode size={14} aria-hidden="true" /> QR
+                </button>
+              </div>
+            </div>
+            <code className={styles.sessionId}>{trackingId}</code>
+            <p className={styles.sessionHint}>
+              To watch this device, add the ID on your dashboard under &quot;Add an existing tracker&quot;.
+            </p>
+          </div>
           {showQr && (
             <QrCodeDialog
               url={trackingId}

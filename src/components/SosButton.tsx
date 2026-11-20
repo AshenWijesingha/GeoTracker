@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { TRACKING_CONFIG } from '@/lib/geo';
 import { vibrate } from '@/lib/alerts';
+import { Siren } from 'lucide-react';
 import styles from './SosButton.module.css';
 
 interface SosButtonProps {
@@ -56,9 +57,11 @@ export default function SosButton({ active, disabled, onTrigger, onCancel }: Sos
   if (active) {
     return (
       <div className={styles.activeBox} role="alert">
-        <div className={styles.activeTitle}>🚨 SOS ALERT SENT</div>
+        <div className={styles.activeTitle}>
+          <Siren size={20} aria-hidden="true" /> SOS sent
+        </div>
         <p>Your tracker owner has been alerted with your location. This is not a call to emergency services — if you are in danger, call your local emergency number.</p>
-        <button type="button" className={styles.cancelBtn} onClick={() => void onCancel()}>
+        <button type="button" className={`btn btn-secondary ${styles.cancelBtn}`} onClick={() => void onCancel()}>
           I&apos;m safe — cancel SOS
         </button>
       </div>
@@ -93,7 +96,7 @@ export default function SosButton({ active, disabled, onTrigger, onCancel }: Sos
       <span className={styles.ring} aria-hidden="true" />
       <span className={styles.label}>
         SOS
-        <small>{progress > 0 ? 'Keep holding…' : 'Hold 2s'}</small>
+        <small>{progress > 0 ? 'Keep holding' : 'Hold 2 s'}</small>
       </span>
     </button>
   );

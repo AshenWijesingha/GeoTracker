@@ -11,3 +11,10 @@ export function appBaseUrl(): string {
   if (typeof window === 'undefined') return BASE_PATH;
   return window.location.origin + BASE_PATH;
 }
+
+/** Where the Android APK and its metadata are published (see deploy.yml). */
+export const APK_PATH = '/downloads/GeoTracker.apk';
+export const APK_INFO_PATH = '/downloads/android.json';
+
+/** Source repository, for release builds and setup docs. */
+export const REPO_URL = 'https://github.com/AshenWijesingha/GeoTracker';
