@@ -78,6 +78,8 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("com.google.android.material:material:1.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+    // Watchdog that restarts always-on sharing if Android stops it.
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.9.0")
     implementation("com.google.android.gms:play-services-location:21.3.0")
     // Google code scanner: scans the dashboard's QR code without needing the

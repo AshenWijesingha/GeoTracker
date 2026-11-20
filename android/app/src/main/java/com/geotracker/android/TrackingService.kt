@@ -134,6 +134,7 @@ class TrackingService : Service() {
     private fun startSharing(id: String) {
         trackerId = id
         prefs.sharing = "active"
+        AlwaysOn.schedule(this)
         trackerReady = false
         sentDevice = false
         lastUploaded = null
@@ -334,6 +335,7 @@ class TrackingService : Service() {
 
     private fun finish(status: String) {
         prefs.sharing = status
+        AlwaysOn.cancel(this)
         val id = prefs.trackerId
         fused.removeLocationUpdates(locationCallback)
         heartbeatJob?.cancel()
@@ -388,6 +390,7 @@ class TrackingService : Service() {
                 val status = if (action == ACTION_PAUSE) "paused" else "stopped"
                 val prefs = Prefs(context)
                 prefs.sharing = status
+                AlwaysOn.cancel(context)
                 TrackingState.update { it.copy(status = status) }
                 prefs.trackerId?.let { id ->
                     App.scope.launch { runCatching { FirestoreClient().updateState(id, status = status) } }

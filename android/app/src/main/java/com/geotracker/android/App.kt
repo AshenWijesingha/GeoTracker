@@ -11,6 +11,8 @@ class App : Application() {
         Notifications.ensureChannels(this)
         val prefs = Prefs(this)
         TrackingState.update { it.copy(status = prefs.sharing, queued = prefs.queueSize()) }
+        // Keep the always-on watchdog scheduled whenever sharing should be on.
+        if (AlwaysOn.shouldRun(this)) AlwaysOn.schedule(this)
     }
 
     companion object {

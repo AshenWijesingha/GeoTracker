@@ -26,13 +26,20 @@
     <string name="resume">Resume</string>
     <string name="pause">Pause</string>
     <string name="stop">Stop</string>
-    <string name="autostart">Resume sharing after the phone restarts</string>
-    <string name="allow_background">Allow location \"all the time\" (needed to resume after restart)</string>
-    <string name="battery_settings">Battery optimisation settings</string>
+    <string name="allow_background">Allow location \"all the time\"</string>
+    <string name="battery_settings">Turn off battery optimisation</string>
+    <string name="always_ready">✓ Shares all the time — in the background and after restarts</string>
+    <string name="always_needs_setup">To share all the time, finish the steps below</string>
+    <string name="always_title">Share all the time</string>
+    <string name="always_background_body">Sharing is on. To keep it on in the background and after the phone restarts, Android needs location access \"Allow all the time\".\n\nTap Open settings, then Permissions → Location → Allow all the time.</string>
+    <string name="always_background_action">Open settings</string>
+    <string name="always_battery_body">Some phones stop apps in the background to save battery. Let GeoTracker run without battery restrictions so sharing isn\'t interrupted.</string>
+    <string name="always_battery_action">Allow</string>
+    <string name="not_now">Not now</string>
     <string name="pair_first">Pair with a console first.</string>
 
     <string name="consent_title">Share your location?</string>
-    <string name="consent_body">While sharing is on, the owner of this tracker will see in real time:\n\n• your location, accuracy, speed and heading\n• your battery level and charging state\n• this phone\'s model, Android version and IP address\n\nSharing keeps running in the background and a notification is always shown. You can pause or stop at any time from the app or the notification.</string>
+    <string name="consent_body">Once you turn sharing on, the owner of this tracker will see in real time, all the time:\n\n• your location, accuracy, speed and heading\n• your battery level and charging state\n• this phone\'s model, Android version and IP address\n\nSharing stays on in the background and after the phone restarts, until you pause or stop it here. A notification is always shown while it\'s on.</string>
     <string name="consent_accept">Share location</string>
     <string name="cancel">Cancel</string>
     <string name="permission_needed">Location permission is needed to share your location.</string>
@@ -49,8 +56,8 @@
     <string name="channel_tracking_desc">Shown while this phone shares its location</string>
     <string name="channel_alerts">Alerts</string>
     <string name="notif_sharing">Sharing location with GeoTracker</string>
-    <string name="notif_resume_title">Location sharing is off</string>
-    <string name="notif_resume_text">Tap to resume sharing with your GeoTracker console.</string>
+    <string name="notif_resume_title">Location sharing was interrupted</string>
+    <string name="notif_resume_text">Tap to turn sharing back on. Allow location \"all the time\" so it restarts by itself.</string>
     <string name="notif_sos_ack_title">SOS acknowledged</string>
     <string name="notif_sos_ack_text">The tracker owner has seen your SOS.</string>
 </resources>

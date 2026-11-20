@@ -5,4 +5,5 @@
     <color name="secondary">#566072</color>
     <color name="sos">#DC2626</color>
     <color name="ic_background">#2563EB</color>
+    <color name="warning">#B45309</color>
 </resources>

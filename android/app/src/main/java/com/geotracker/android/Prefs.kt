@@ -31,10 +31,6 @@ class Prefs(context: Context) {
         get() = sp.getBoolean(KEY_CONSENT, false)
         set(v) = sp.edit().putBoolean(KEY_CONSENT, v).apply()
 
-    /** Restart sharing after a reboot or app update if it was on. */
-    var autoStart: Boolean
-        get() = sp.getBoolean(KEY_AUTOSTART, true)
-        set(v) = sp.edit().putBoolean(KEY_AUTOSTART, v).apply()
 
     /** Fixes recorded without connectivity, oldest first. */
     @Synchronized
@@ -83,7 +79,6 @@ class Prefs(context: Context) {
         private const val KEY_DEVICE_NAME = "device_name"
         private const val KEY_SHARING = "sharing"
         private const val KEY_CONSENT = "consent"
-        private const val KEY_AUTOSTART = "autostart"
         private const val KEY_QUEUE = "queue"
 
         fun defaultDeviceName(): String {

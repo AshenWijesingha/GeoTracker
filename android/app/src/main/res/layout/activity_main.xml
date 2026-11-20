@@ -195,12 +195,13 @@
                         android:text="@string/stop" />
                 </LinearLayout>
 
-                <com.google.android.material.materialswitch.MaterialSwitch
-                    android:id="@+id/autoStartSwitch"
+                <TextView
+                    android:id="@+id/alwaysOnText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/autostart" />
+                    android:layout_marginTop="12dp"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textStyle="bold" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/backgroundButton"
