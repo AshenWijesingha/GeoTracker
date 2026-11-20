@@ -7,6 +7,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
+import { Download, Printer } from 'lucide-react';
 import styles from './QrCodeDialog.module.css';
 
 interface Props {
@@ -85,7 +86,7 @@ export default function QrCodeDialog({ url, title = 'Tracking link', hint = DEFA
         onClick={(e) => e.stopPropagation()}
       >
         <h2 id="qr-title" className={styles.title}>
-          ▦ {title}
+          {title}
         </h2>
         <p className={styles.hint}>{hint}</p>
         {error ? (
@@ -105,13 +106,13 @@ export default function QrCodeDialog({ url, title = 'Tracking link', hint = DEFA
         )}
         <div className={styles.url}>{url}</div>
         <div className={styles.actions}>
-          <button type="button" className="btn btn-secondary" onClick={download} disabled={!svg}>
-            ⬇ Save PNG
+          <button type="button" className="btn btn-secondary btn-sm" onClick={download} disabled={!svg}>
+            <Download size={14} aria-hidden="true" /> Save PNG
           </button>
-          <button type="button" className="btn btn-secondary" onClick={print} disabled={!svg}>
-            🖨 Print
+          <button type="button" className="btn btn-secondary btn-sm" onClick={print} disabled={!svg}>
+            <Printer size={14} aria-hidden="true" /> Print
           </button>
-          <button type="button" className="btn" onClick={onClose} ref={closeRef}>
+          <button type="button" className="btn btn-sm" onClick={onClose} ref={closeRef}>
             Close
           </button>
         </div>

@@ -6,6 +6,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type * as Leaflet from 'leaflet';
+import { LocateFixed, Maximize2 } from 'lucide-react';
+import { currentTheme } from '@/lib/theme';
 import styles from './LiveMap.module.css';
 
 export interface MapMarker {
@@ -74,12 +76,13 @@ const LAYER_STORAGE_KEY = 'geotracker:map-layer';
 const DEFAULT_VIEW: [number, number] = [20, 0];
 
 const VARIANT_COLORS: Record<NonNullable<MapMarker['variant']>, string> = {
-  live: '#00ff88',
-  idle: '#888888',
-  paused: '#ffcc00',
-  sos: '#ff3366',
-  self: '#00ccff',
-  selected: '#ff00ff',
+  // Match the status tokens in globals.css (success, neutral, warning, danger, accent).
+  live: '#16a34a',
+  idle: '#8a93a3',
+  paused: '#d97706',
+  sos: '#dc2626',
+  self: '#2563eb',
+  selected: '#2563eb',
 };
 
 function escapeHtml(s: string): string {
@@ -93,7 +96,8 @@ function readStoredLayer(): string {
   } catch {
     // ignore
   }
-  return 'Dark';
+  // No saved choice: match the app theme.
+  return currentTheme() === 'dark' ? 'Dark' : 'Voyager';
 }
 
 export default function LiveMap({
@@ -264,7 +268,7 @@ export default function LiveMap({
     }
     if (trailRef.current) trailRef.current.setLatLngs(latlngs);
     else
-      trailRef.current = L.polyline(latlngs, { color: '#00ccff', weight: 3, opacity: 0.8, dashArray: '6 6' }).addTo(map);
+      trailRef.current = L.polyline(latlngs, { color: '#2563eb', weight: 4, opacity: 0.75, lineCap: 'round', lineJoin: 'round' }).addTo(map);
   }, [trail, ready]);
 
   const fitAll = () => {
@@ -301,7 +305,7 @@ export default function LiveMap({
       {!ready && <div className={styles.loading}>Loading map…</div>}
       <div className={styles.controls}>
         <button type="button" onClick={fitAll} title="Show everything on the map">
-          ⤢ Fit all
+          <Maximize2 size={14} aria-hidden="true" /> Fit all
         </button>
         {followId && (
           <button
@@ -310,7 +314,7 @@ export default function LiveMap({
             onClick={() => setFollow((f) => !f)}
             title="Keep the selected device centred"
           >
-            ◎ {follow ? 'Following' : 'Follow'}
+            <LocateFixed size={14} aria-hidden="true" /> {follow ? 'Following' : 'Follow'}
           </button>
         )}
       </div>

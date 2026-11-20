@@ -15,7 +15,8 @@ android {
         applicationId = "com.geotracker.android"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
+        // CI passes the workflow run number so every published APK can update the last one.
+        versionCode = prop("geotrackerVersionCode").toIntOrNull() ?: 1
         versionName = "1.0.0"
 
         val webUrl = URI(prop("geotrackerWebUrl").trimEnd('/'))

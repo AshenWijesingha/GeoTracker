@@ -6,6 +6,7 @@ A small Android app that shares the phone's location with the GeoTracker console
 
 ## Install
 
+- **From your GeoTracker site (easiest):** on the phone, open `https://<you>.github.io/<repo>/download/` (or tap **Get the app** on the dashboard) and tap **Download APK**. Every deploy to GitHub Pages builds and publishes the latest APK there. On a computer, that page shows a QR code to open it on the phone.
 - **From GitHub:** open the **Actions → Android** workflow run and download the `GeoTracker-android` artifact. If someone has pushed an `android-v*` tag, the APK is also attached to that release.
 - **Build it yourself:** see below.
 
@@ -57,7 +58,7 @@ The URL is used for the "Open console" button and for opening tracking links wit
 
 ### Release signing
 
-Without a keystore, release builds are signed with the debug key so they still install. A CI build uses a new debug key on every run, so one build can't update another; uninstall first. To sign properly, add these repository secrets: `ANDROID_KEYSTORE_BASE64` (`base64 -w0 release.jks`), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` and `ANDROID_KEY_PASSWORD`.
+Without a keystore, release builds are signed with the debug key so they still install. The Pages deploy caches that key so each published APK updates the previous one; the separate Android CI workflow does not, so its artifacts can't update each other (uninstall first). To sign properly, add these repository secrets: `ANDROID_KEYSTORE_BASE64` (`base64 -w0 release.jks`), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` and `ANDROID_KEY_PASSWORD`.
 
 ### Live test
 

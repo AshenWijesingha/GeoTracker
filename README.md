@@ -31,7 +31,7 @@ Version 3 adds the features of [Realtime-Location-Tracker](https://github.com/ma
 - **SOS button:** hold for 2 seconds to send, which prevents accidental alerts. It works with touch, mouse and keyboard and vibrates as feedback. The person can cancel it with "I'm safe".
 - **Chat** with the tracker owner.
 
-### Command Center (`/dashboard`)
+### Dashboard (`/dashboard`)
 - **Realtime updates** through Firestore `onSnapshot` listeners. They replace the old 10-second polling, so updates appear instantly and no reads are wasted.
 - **Live map of all trackers**, with a colour per status (live, paused, offline, SOS) and the selected tracker's trail and accuracy radius.
   - **7 map styles:** Dark, Streets, Satellite, Light, Voyager, Topographic and Esri Streets. The last one used is remembered.
@@ -50,6 +50,17 @@ Version 3 adds the features of [Realtime-Location-Tracker](https://github.com/ma
 - **Share links:** native share sheet on mobile, copy to clipboard, or show the link as a **QR code**. The QR code is generated in the browser (the link is never sent to a QR service) and can be saved as a PNG or printed. Scan it with a phone camera to open the link, or with the Android app to pair it.
 - **Link an existing tracker:** paste a Quick Track session ID or a tracking link to add it to your account.
 - **Search** the tracker list by name, ID, OS or browser.
+
+### Get the app (`/download`)
+- **One-tap APK download from your own site.** Every deploy builds the Android app and publishes it at `/downloads/GeoTracker.apk`, with its version, size and SHA-256 checksum.
+- **Adapts to the visitor's device:** Android gets the download and install steps, iPhone gets "Add to Home Screen" steps, and a computer gets a QR code to open the page on a phone.
+- **Set up in three steps** guide: create a tracker, connect the phone, start sharing.
+- Android visitors on a tracking link see a prompt to use the app for background sharing.
+
+### Design
+- **Light and dark themes** that follow the system, with a Light / Dark / System switch. The map style follows the theme too.
+- **One design system** (`src/styles/globals.css`): colour, type, spacing, radius, elevation and motion tokens, plus shared buttons, inputs, cards, badges, alerts and tabs. See [docs/DESIGN_SYSTEM.md](./docs/DESIGN_SYSTEM.md).
+- Inter for text, JetBrains Mono for coordinates and IDs, and [Lucide](https://lucide.dev) icons.
 
 ### Platform
 - **Installable PWA** with a manifest, PNG, maskable and Apple icons, shortcuts, a service worker that caches static files, and an offline fallback page.
@@ -116,7 +127,7 @@ All of these are optional. The built-in config points at the default Firebase pr
 4. Watch them live on the map. Select the tracker to see the trail, statistics, history, exports and chat.
 5. Click **🔔 Enable alerts** once to get SOS and low-battery notifications even when the tab is in the background.
 
-**Android app:** install `GeoTracker.apk` (see [android/README.md](./android/README.md)), tap **Scan QR code**, scan the tracker's QR code on the dashboard (**▦ QR code**), then tap **Start**. The phone appears on the dashboard like any other tracker.
+**Android app:** open **Get the app** on the dashboard (or `/download` on your site) on the phone and tap **Download APK**. After installing, tap **Scan QR code**, scan the tracker's **QR code** on the dashboard, then tap **Start**. The phone appears on the dashboard like any other tracker. See [android/README.md](./android/README.md) for details.
 
 **Quick Track** (`/tracker`) shares the current device without creating a tracker first. To watch it, copy its session ID into **Link an existing tracker** on any dashboard.
 
@@ -165,7 +176,8 @@ v3 moves the history into a sub-collection:
 ```
 src/
 ├── app/
-│   ├── dashboard/        Command Center (realtime map, alerts, stats, chat, export)
+│   ├── dashboard/        Dashboard (realtime map, alerts, stats, chat, export)
+│   ├── download/         Get the app: APK download, install and setup guide
 │   ├── login/            Email/password + guest sign-in
 │   ├── track/            Tracking link page (?id=…)
 │   ├── tracker/          Quick Track (self-generated session)
@@ -177,6 +189,7 @@ src/
 │   ├── SosButton.tsx     Hold-to-trigger SOS
 │   ├── ChatPanel.tsx     Realtime owner ↔ device chat
 │   ├── QrCodeDialog.tsx  Show a link as a QR code (save PNG / print)
+│   ├── ui/               App header, brand, theme switch, status badge, QR image
 │   └── PwaRegister.tsx   Service worker registration
 ├── lib/
 │   ├── firebase.ts            Firebase init (persistent offline cache)
@@ -185,9 +198,12 @@ src/
 │   ├── geo.ts                 Pure helpers: haversine, stats, CSV/GPX, config
 │   ├── tracker-status.ts      Live/paused/offline/SOS derivation, history merge
 │   ├── alerts.ts              Web Audio siren, notifications, vibration
+│   ├── theme.ts               Light / dark / system theme preference
+│   ├── platform.ts            Android / iOS / desktop detection
 │   └── auth-context.tsx       Firebase Auth context
 public/
 ├── manifest.json, sw.js, offline.html, icons/
+src/styles/globals.css         Design tokens and shared components
 tests/                         Vitest unit tests
 android/                       Android app (Kotlin foreground service)
 firestore.rules                Security rules (deploy with firebase-tools)
@@ -209,7 +225,23 @@ All of these settings live in `TRACKING_CONFIG` in `src/lib/geo.ts`:
 
 ## 🌐 Deployment
 
-- **GitHub Pages:** already configured. Every push to `main` runs `npm run check`, builds with `NEXT_PUBLIC_BASE_PATH=/<repo>`, and deploys `out/`.
+### Set up your own GeoTracker
+
+1. **Fork** this repository.
+2. In **Settings → Pages**, set **Source** to **GitHub Actions**.
+3. Create a Firebase project, enable **Email/Password** and **Anonymous** sign-in, and put its web config in `src/lib/firebase.ts` (or the `NEXT_PUBLIC_FIREBASE_*` variables). Also set `geotrackerFirebaseProjectId` and `geotrackerFirebaseApiKey` in `android/gradle.properties`. See [FIREBASE_SETUP.md](./FIREBASE_SETUP.md).
+4. Deploy the security rules once: `npx firebase-tools deploy --only firestore:rules --project <your-project>`.
+5. Push to `main`. The site is published at `https://<you>.github.io/<repo>/`, and the app at `…/download/`.
+6. *(Recommended)* Add a release signing key so app updates always install over the previous version. Add these repository secrets: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` and `ANDROID_KEY_PASSWORD`. To create a key:
+   ```bash
+   keytool -genkeypair -v -keystore release.jks -alias geotracker -keyalg RSA -keysize 2048 -validity 10000
+   base64 -w0 release.jks   # value for ANDROID_KEYSTORE_BASE64
+   ```
+   Without these secrets, deploys reuse one cached key, which works until that cache is cleared.
+
+### Hosting
+
+- **GitHub Pages:** already configured. Every push to `main` runs `npm run check`, builds with `NEXT_PUBLIC_BASE_PATH=/<repo>`, builds the Android APK into `out/downloads/`, and deploys `out/`.
 - **Vercel / Netlify / Firebase Hosting / any static host:** run `npm run build` and serve the `out/` directory.
 
 ---

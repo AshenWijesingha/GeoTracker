@@ -2,8 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { getFirebaseErrorMessage } from '@/lib/firebase-errors';
+import { AlertCircle, ArrowLeft, CheckCircle2, MapPinned, ShieldCheck, Siren, Smartphone, UserRound } from 'lucide-react';
+import Brand from '@/components/ui/Brand';
+import ThemeToggle from '@/components/ui/ThemeToggle';
 import styles from './page.module.css';
 
 type Mode = 'signin' | 'signup' | 'reset';
@@ -18,7 +22,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [logoFailed, setLogoFailed] = useState(false);
 
   const isSignUp = mode === 'signup';
   const isReset = mode === 'reset';
@@ -84,132 +87,154 @@ export default function LoginPage() {
     }
   };
 
-  const title = isReset ? 'Reset Password' : isSignUp ? 'Create Account' : 'Access Command Center';
+  const title = isReset ? 'Reset your password' : isSignUp ? 'Create your account' : 'Welcome back';
+  const subtitle = isReset
+    ? "Enter your email and we'll send you a link to choose a new password."
+    : isSignUp
+      ? 'Start seeing the people and devices you care about on one map.'
+      : 'Sign in to see your trackers.';
 
   return (
-    <div className={styles.loginBg}>
-      <div className={styles.container}>
-        <div className={styles.logo}>
-          {logoFailed ? (
-            <span>🎯</span>
-          ) : (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src="https://res.cloudinary.com/dkj22lm1g/image/upload/v1770788944/GeoTracker_fbqxq1.webp"
-              alt="GeoTracker Logo"
-              width={80}
-              height={80}
-              className={styles.logoImage}
-              onError={() => setLogoFailed(true)}
-            />
-          )}
+    <div className={styles.page}>
+      <aside className={styles.aside} aria-hidden="true">
+        <Brand size={32} />
+        <div className={styles.pitch}>
+          <h2>Know where your people and things are.</h2>
+          <p>Private, consent-based location sharing with live maps, SOS alerts and battery warnings.</p>
+          <ul className={styles.features}>
+            <li>
+              <MapPinned size={18} /> Live map of everyone who shares with you
+            </li>
+            <li>
+              <ShieldCheck size={18} /> Sharing only starts after the other person agrees
+            </li>
+            <li>
+              <Siren size={18} /> SOS and low-battery alerts on your screen
+            </li>
+            <li>
+              <Smartphone size={18} /> Works in any browser, plus an Android app
+            </li>
+          </ul>
         </div>
-        <h1>GeoTracker</h1>
-        <p className={styles.subtitle}>Advanced geolocation surveillance system</p>
+        <p className={styles.asideFoot}>GeoTracker · Personal location sharing</p>
+      </aside>
 
-        {isReset ? (
-          <div className={styles.infoBox}>
-            <p>🔑 <strong>Password Recovery</strong></p>
-            <p>Enter your account email and we&apos;ll send you a secure link to set a new password.</p>
+      <main className={styles.main}>
+        <div className={styles.panel}>
+          <div className={styles.mobileBrand}>
+            <Brand size={30} />
           </div>
-        ) : (
-          <div className={styles.infoBox}>
-            <p>🔐 <strong>Firebase Secured</strong></p>
-            <p>All tracking data is stored securely in the cloud with real-time sync.</p>
-          </div>
-        )}
 
-        {(error || authError) && <div className={styles.errorBox}>⚠️ {error || authError}</div>}
-        {notice && <div className={styles.successBox}>✓ {notice}</div>}
+          <h1 className={styles.title}>{title}</h1>
+          <p className={styles.subtitle}>{subtitle}</p>
 
-        <form onSubmit={handleSubmit} action="#" className={styles.form}>
-          {isSignUp && (
-            <div className={styles.inputGroup}>
-              <label htmlFor="displayName">Display Name</label>
-              <input
-                type="text"
-                id="displayName"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Agent Codename"
-                className={styles.input}
-              />
+          {(error || authError) && (
+            <div className="status error" role="alert">
+              <AlertCircle size={16} aria-hidden="true" />
+              <span>{error || authError}</span>
+            </div>
+          )}
+          {notice && (
+            <div className="status success" role="status">
+              <CheckCircle2 size={16} aria-hidden="true" />
+              <span>{notice}</span>
             </div>
           )}
 
-          <div className={styles.inputGroup}>
-            <label htmlFor="email">Email</label>
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="agent@command.center"
-              required
-              autoComplete="email"
-              className={styles.input}
-            />
-          </div>
-
-          {!isReset && (
-            <div className={styles.inputGroup}>
-              <div className={styles.labelRow}>
-                <label htmlFor="password">Password</label>
-                {mode === 'signin' && (
-                  <button type="button" className={styles.linkBtn} onClick={() => switchMode('reset')}>
-                    Forgot password?
-                  </button>
-                )}
+          <form onSubmit={handleSubmit} action="#" className={styles.form}>
+            {isSignUp && (
+              <div className="field">
+                <label htmlFor="displayName">Your name</label>
+                <input
+                  type="text"
+                  id="displayName"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Alex"
+                  autoComplete="name"
+                  className="input"
+                />
               </div>
+            )}
+
+            <div className="field">
+              <label htmlFor="email">Email</label>
               <input
-                type="password"
-                id="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                type="email"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
                 required
-                minLength={6}
-                autoComplete={isSignUp ? 'new-password' : 'current-password'}
-                className={styles.input}
+                autoComplete="email"
+                className="input"
               />
             </div>
+
+            {!isReset && (
+              <div className="field">
+                <div className={styles.labelRow}>
+                  <label htmlFor="password">Password</label>
+                  {mode === 'signin' && (
+                    <button type="button" className={styles.linkBtn} onClick={() => switchMode('reset')}>
+                      Forgot password?
+                    </button>
+                  )}
+                </div>
+                <input
+                  type="password"
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={isSignUp ? 'At least 6 characters' : ''}
+                  required
+                  minLength={6}
+                  autoComplete={isSignUp ? 'new-password' : 'current-password'}
+                  className="input"
+                />
+              </div>
+            )}
+
+            <button type="submit" className="btn btn-lg btn-block" disabled={loading}>
+              {loading ? 'Please wait…' : isReset ? 'Send reset link' : isSignUp ? 'Create account' : 'Sign in'}
+            </button>
+          </form>
+
+          {isReset ? (
+            <button onClick={() => switchMode('signin')} className={`btn btn-ghost btn-block ${styles.back}`}>
+              <ArrowLeft size={16} aria-hidden="true" /> Back to sign in
+            </button>
+          ) : (
+            <>
+              <div className={styles.divider}>
+                <span>or</span>
+              </div>
+
+              <button onClick={handleGuestAccess} className="btn btn-secondary btn-lg btn-block" disabled={loading}>
+                <UserRound size={16} aria-hidden="true" /> Continue as guest
+              </button>
+
+              <p className={styles.switch}>
+                {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
+                <button onClick={() => switchMode(isSignUp ? 'signin' : 'signup')} className={styles.linkBtn}>
+                  {isSignUp ? 'Sign in' : 'Create one'}
+                </button>
+              </p>
+            </>
           )}
 
-          <button type="submit" className={`btn ${styles.loginBtn}`} disabled={loading}>
-            {loading
-              ? 'Processing...'
-              : isReset
-                ? 'Send Reset Link'
-                : isSignUp
-                  ? 'Create Account'
-                  : 'Access Command Center'}
-          </button>
-        </form>
+          <div className={styles.footer}>
+            <Link href="/download" className={styles.appLink}>
+              <Smartphone size={14} aria-hidden="true" /> Get the Android app
+            </Link>
+            <ThemeToggle />
+          </div>
 
-        {isReset ? (
-          <button onClick={() => switchMode('signin')} className={styles.toggleBtn}>
-            ← Back to Sign In
-          </button>
-        ) : (
-          <>
-            <div className={styles.divider}>
-              <span>or</span>
-            </div>
-
-            <button onClick={handleGuestAccess} className={`btn ${styles.guestBtn}`} disabled={loading}>
-              👤 Continue as Guest
-            </button>
-
-            <button onClick={() => switchMode(isSignUp ? 'signin' : 'signup')} className={styles.toggleBtn}>
-              {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
-            </button>
-          </>
-        )}
-
-        <span className="sr-only" aria-live="polite">
-          {title}
-        </span>
-      </div>
+          <span className="sr-only" aria-live="polite">
+            {title}
+          </span>
+        </div>
+      </main>
     </div>
   );
 }

@@ -12,12 +12,12 @@ export function getTrackerStatus(tracker: Tracker, now = Date.now()): TrackerLiv
 }
 
 export const STATUS_LABEL: Record<TrackerLiveStatus, string> = {
-  sos: '🚨 SOS',
-  live: '● Live',
-  paused: '❚❚ Paused',
-  stopped: '■ Stopped',
-  offline: '○ Offline',
-  waiting: '◌ Waiting',
+  sos: 'SOS',
+  live: 'Live',
+  paused: 'Paused',
+  stopped: 'Stopped',
+  offline: 'Offline',
+  waiting: 'Waiting',
 };
 
 /** Merge legacy embedded locations with sub-collection points, de-duplicated. */

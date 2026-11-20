@@ -13,15 +13,15 @@ export function getFirebaseErrorMessage(error: unknown): string {
     const authError = error as AuthError;
     switch (authError.code) {
       case 'auth/configuration-not-found':
-        return '⚠️ Firebase Authentication is not properly configured. Please enable Authentication in Firebase Console and enable Email/Password and Anonymous sign-in methods.';
+        return 'Firebase Authentication is not properly configured. Please enable Authentication in Firebase Console and enable Email/Password and Anonymous sign-in methods.';
       case 'auth/operation-not-allowed':
-        return '⚠️ This sign-in method is not enabled. Please enable Email/Password or Anonymous authentication in Firebase Console.';
+        return 'This sign-in method is not enabled. Please enable Email/Password or Anonymous authentication in Firebase Console.';
       case 'auth/invalid-api-key':
-        return '⚠️ Invalid Firebase API key. Please check your Firebase configuration.';
+        return 'Invalid Firebase API key. Please check your Firebase configuration.';
       case 'auth/app-not-authorized':
-        return '⚠️ This app is not authorized to use Firebase Authentication. Please check your Firebase project settings.';
+        return 'This app is not authorized to use Firebase Authentication. Please check your Firebase project settings.';
       case 'auth/network-request-failed':
-        return '⚠️ Network error. Please check your internet connection and try again.';
+        return 'Network error. Please check your internet connection and try again.';
       case 'auth/user-not-found':
         return 'No account found with this email address.';
       case 'auth/wrong-password':

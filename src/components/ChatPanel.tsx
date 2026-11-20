@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { sendMessage, subscribeToMessages } from '@/lib/firebase-services';
 import { beep } from '@/lib/alerts';
 import type { ChatMessage } from '@/lib/types';
+import { SendHorizontal } from 'lucide-react';
 import styles from './ChatPanel.module.css';
 
 interface ChatPanelProps {
@@ -83,7 +84,7 @@ export default function ChatPanel({ trackingId, role, senderName, onIncoming, co
     <div className={`${styles.chat} ${compact ? styles.compact : ''}`}>
       <div ref={listRef} className={styles.list} aria-live="polite">
         {messages.length === 0 ? (
-          <p className={styles.empty}>No messages yet. Say hello 👋</p>
+          <p className={styles.empty}>No messages yet</p>
         ) : (
           messages.map((m) => (
             <div key={m.id} className={`${styles.msg} ${m.sender === role ? styles.mine : styles.theirs}`}>
@@ -110,7 +111,7 @@ export default function ChatPanel({ trackingId, role, senderName, onIncoming, co
           autoComplete="off"
         />
         <button type="submit" disabled={!text.trim() || sending}>
-          Send
+          <SendHorizontal size={15} aria-hidden="true" /> Send
         </button>
       </form>
     </div>

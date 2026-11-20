@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="primary">#00C46A</color>
-    <color name="sos">#CC0033</color>
-    <color name="ic_background">#0A0A1A</color>
+    <!-- Same palette as the web app (src/styles/globals.css). -->
+    <color name="primary">#2563EB</color>
+    <color name="secondary">#566072</color>
+    <color name="sos">#DC2626</color>
+    <color name="ic_background">#2563EB</color>
 </resources>

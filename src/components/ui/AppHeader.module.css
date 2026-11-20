@@ -1,0 +1,140 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: saturate(1.4) blur(10px);
+  -webkit-backdrop-filter: saturate(1.4) blur(10px);
+  padding-top: env(safe-area-inset-top);
+}
+
+.inner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  max-width: var(--content-max);
+  height: var(--header-height);
+  margin: 0 auto;
+  padding: 0 var(--space-6);
+}
+
+.brandLink {
+  display: inline-flex;
+  border-radius: var(--radius-sm);
+}
+
+.brandLink:hover {
+  text-decoration: none;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.navItem {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 34px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  transition: background-color var(--duration-fast) var(--ease), color var(--duration-fast) var(--ease);
+}
+
+.navItem:hover {
+  background: var(--surface-2);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.navItem[aria-current='page'] {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-left: auto;
+}
+
+.account {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-left: var(--space-3);
+  border-left: 1px solid var(--border);
+}
+
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.userName {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+@media (max-width: 900px) {
+  .userName {
+    display: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .inner {
+    gap: var(--space-3);
+    padding: 0 var(--space-4);
+  }
+
+  .navLabel {
+    display: none;
+  }
+
+  .navItem {
+    width: 36px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .brandLink :global(span span) {
+    display: none;
+  }
+
+  .account {
+    padding-left: var(--space-1);
+    gap: 0;
+  }
+
+  .avatar {
+    display: none;
+  }
+
+  .right {
+    gap: var(--space-2);
+  }
+
+  .nav {
+    gap: 0;
+  }
+}

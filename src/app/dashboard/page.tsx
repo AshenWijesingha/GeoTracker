@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { createTrackerAsync, deleteTrackerAsync } from '@/lib/storage';
 import {
@@ -25,7 +25,7 @@ import {
   pointsToGPX,
   slugify,
 } from '@/lib/geo';
-import { getTrackerStatus, mergeHistory, STATUS_LABEL, type TrackerLiveStatus } from '@/lib/tracker-status';
+import { getTrackerStatus, mergeHistory, STATUS_LABEL } from '@/lib/tracker-status';
 import {
   notify,
   notificationsSupported,
@@ -36,6 +36,39 @@ import {
 } from '@/lib/alerts';
 import { appBaseUrl } from '@/lib/paths';
 import QrCodeDialog from '@/components/QrCodeDialog';
+import AppHeader from '@/components/ui/AppHeader';
+import StatusBadge from '@/components/ui/StatusBadge';
+import {
+  Activity,
+  AlertTriangle,
+  Battery,
+  BatteryCharging,
+  BatteryLow,
+  Bell,
+  Check,
+  CheckCircle2,
+  Clock,
+  Copy,
+  Crosshair,
+  Download,
+  Eraser,
+  ExternalLink,
+  Link2,
+  MapPin,
+  MousePointerClick,
+  Plus,
+  QrCode,
+  RotateCw,
+  Route,
+  Search,
+  Share2,
+  Siren,
+  Smartphone,
+  Trash2,
+  Volume2,
+  VolumeX,
+  type LucideIcon,
+} from 'lucide-react';
 import { useNow } from '@/lib/use-now';
 import type { LocationData, Tracker } from '@/lib/types';
 import type { MapMarker } from '@/components/LiveMap';
@@ -56,10 +89,6 @@ function download(filename: string, content: string, type: string) {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-function statusClass(status: TrackerLiveStatus) {
-  return styles[`status_${status}`] ?? '';
 }
 
 export default function Dashboard() {
@@ -85,6 +114,7 @@ export default function Dashboard() {
   const [notifPermission, setNotifPermission] = useState<NotificationPermission | 'unsupported'>('default');
   const [fitKey, setFitKey] = useState(0);
   const [muted, setMuted] = useState(false);
+  const [tab, setTab] = useState<'overview' | 'messages' | 'history'>('overview');
 
   const batteryAlertRef = useRef<Map<string, string>>(new Map());
   const sosSeenRef = useRef<Set<string>>(new Set());
@@ -212,7 +242,7 @@ export default function Dashboard() {
         accuracy: t.id === selectedId ? loc.accuracy : null,
         label: t.name,
         detail: `${STATUS_LABEL[status]} · ${formatFixAge(t.lastSeen, now)}${
-          t.battery ? ` · 🔋${Math.round(t.battery.level * 100)}%` : ''
+          t.battery ? ` · battery ${Math.round(t.battery.level * 100)}%` : ''
         }`,
         variant:
           status === 'sos' ? 'sos' : t.id === selectedId ? 'selected' : status === 'live' ? 'live' : status === 'paused' ? 'paused' : 'idle',
@@ -347,324 +377,502 @@ export default function Dashboard() {
 
   if (authLoading || (loading && !permissionError)) {
     return (
-      <div className={styles.dashboardBg}>
-        <div className={styles.center}>
-          <div className="spinner"></div>
-        </div>
+      <div className="page-center">
+        <div className="spinner" role="status" aria-label="Loading" />
       </div>
     );
   }
 
   const historyNewestFirst = [...history].reverse();
+  const selectedStatus = selected ? getTrackerStatus(selected, now) : null;
 
   return (
-    <div className={styles.dashboardBg} onPointerDown={unlockAudio}>
-      <header className={styles.header}>
-        <div className={styles.headerContent}>
-          <div>
-            <h1>🎯 Command Center</h1>
-            <p className={styles.subtitle}>Real-time tracking dashboard</p>
-          </div>
-          <nav className={styles.headerActions} aria-label="Main">
-            <span className={styles.userInfo}>👤 {user?.displayName || user?.email || 'Guest'}</span>
-            {notifPermission !== 'granted' && notifPermission !== 'unsupported' && (
-              <button type="button" onClick={enableAlerts} className={styles.navLink}>
-                🔔 Enable alerts
-              </button>
-            )}
-            <Link href="/tracker" className={styles.navLink}>
-              📡 Quick Track
-            </Link>
-            <Link href="/users" className={styles.navLink}>
-              👥 Users
-            </Link>
-            <button type="button" onClick={handleLogout} className={styles.logoutBtn}>
-              ⏻ Sign out
+    <div className={styles.page} onPointerDown={unlockAudio}>
+      <AppHeader
+        userName={user?.displayName || user?.email || 'Guest'}
+        onSignOut={handleLogout}
+        actions={
+          notifPermission !== 'granted' && notifPermission !== 'unsupported' ? (
+            <button type="button" onClick={enableAlerts} className="btn btn-secondary btn-sm">
+              <Bell size={15} aria-hidden="true" />
+              <span className={styles.hideSm}>Enable alerts</span>
             </button>
-          </nav>
-        </div>
-      </header>
+          ) : null
+        }
+      />
 
-      {sosTrackers.map((t) => (
-        <div key={t.id} className={styles.sosBanner} role="alert">
-          <div>
-            <strong>🚨 SOS — {t.name}</strong>
-            <span>
-              {' '}
-              triggered {formatFixAge(t.sos?.triggeredAt, now)}
-              {typeof t.sos?.latitude === 'number' && typeof t.sos?.longitude === 'number'
-                ? ` at ${t.sos.latitude.toFixed(5)}, ${t.sos.longitude.toFixed(5)}`
-                : ' (location unavailable)'}
-            </span>
-          </div>
-          <div className={styles.sosActions}>
-            <button type="button" onClick={() => { setSelectedId(t.id); setFitKey((k) => k + 1); }}>
-              Show on map
-            </button>
-            <button type="button" onClick={() => setMuted((m) => !m)}>{muted ? '🔈 Unmute' : '🔇 Mute'}</button>
-            <button type="button" className={styles.ackBtn} onClick={() => acknowledgeSos(t.id).catch(() => showToast('Could not acknowledge'))}>
-              Acknowledge
-            </button>
-          </div>
-        </div>
-      ))}
-
-      <section className={styles.summary} aria-label="Overview">
-        <SummaryCard label="Trackers" value={summary.total} />
-        <SummaryCard label="Live now" value={summary.live} tone="ok" />
-        <SummaryCard label="SOS" value={summary.sos} tone={summary.sos ? 'danger' : undefined} />
-        <SummaryCard label="Low battery" value={summary.lowBattery} tone={summary.lowBattery ? 'warning' : undefined} />
-      </section>
-
-      <div className={styles.layout}>
-        <aside className={styles.sidebar}>
-          <section className={styles.card}>
-            <h2>New tracker</h2>
-            <form onSubmit={handleCreateTracker} className={styles.inlineForm}>
-              <label htmlFor="trackerName" className="sr-only">Tracker name</label>
-              <input
-                id="trackerName"
-                value={trackerName}
-                onChange={(e) => setTrackerName(e.target.value)}
-                placeholder="e.g. Family trip, Delivery van"
-                maxLength={80}
-                className={styles.input}
-              />
-              <button type="submit" className="btn" disabled={creating}>
-                {creating ? '…' : 'Create'}
-              </button>
-            </form>
-            {generatedUrl && (
-              <div className={styles.generatedLink}>
-                <p>✓ Link ready — send it to the person who will share their location:</p>
-                <div className={styles.linkText}>{generatedUrl}</div>
-                <div className={styles.row}>
-                  <button type="button" className="btn btn-secondary" onClick={() => copyText(generatedUrl, 'Tracking link copied')}>
-                    📋 Copy
-                  </button>
-                  <button type="button" className="btn btn-secondary" onClick={() => shareLink(generatedUrl, 'tracker')}>
-                    📤 Share
-                  </button>
-                  <button type="button" className="btn btn-secondary" onClick={() => setQr({ url: generatedUrl, title: 'New tracking link' })}>
-                    ▦ QR code
-                  </button>
-                </div>
+      {sosTrackers.length > 0 && (
+        <div className={styles.sosStack}>
+          {sosTrackers.map((t) => (
+            <div key={t.id} className={styles.sosBanner} role="alert">
+              <div className={styles.sosIcon}>
+                <Siren size={20} aria-hidden="true" />
               </div>
-            )}
-            <details className={styles.linkExisting}>
-              <summary>Link an existing tracker (Quick Track ID or link)</summary>
-              <form onSubmit={handleLinkExisting} className={styles.inlineForm}>
-                <label htmlFor="linkInput" className="sr-only">Tracker ID or link</label>
-                <input
-                  id="linkInput"
-                  value={linkInput}
-                  onChange={(e) => setLinkInput(e.target.value)}
-                  placeholder="track_… or https://…/track/?id=…"
-                  className={styles.input}
-                />
-                <button type="submit" className="btn btn-secondary">Link</button>
-              </form>
-            </details>
-          </section>
-
-          <section className={styles.card}>
-            <div className={styles.listHeader}>
-              <h2>Trackers ({trackers.length})</h2>
-              {trackers.length > 3 && (
-                <input
-                  type="search"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search…"
-                  aria-label="Search trackers"
-                  className={`${styles.input} ${styles.search}`}
-                />
-              )}
-            </div>
-
-            {permissionError ? (
-              <div className={styles.emptyState}>
-                <p>⚠️ Unable to read trackers: insufficient permissions.</p>
-                <p className={styles.muted}>Deploy the latest firestore.rules (see FIREBASE_SETUP.md).</p>
-                <button type="button" className="btn" onClick={() => setRetryKey((k) => k + 1)}>🔄 Retry</button>
-              </div>
-            ) : filtered.length === 0 ? (
-              <div className={styles.emptyState}>
-                <p>{trackers.length === 0 ? '📡 No trackers yet. Create your first one above.' : 'No trackers match your search.'}</p>
-              </div>
-            ) : (
-              <ul className={styles.trackerList}>
-                {filtered.map((t) => {
-                  const status = getTrackerStatus(t, now);
-                  const battery = classifyBattery(t.battery?.level, t.battery?.charging);
-                  return (
-                    <li key={t.id}>
-                      <button
-                        type="button"
-                        className={`${styles.trackerItem} ${t.id === selectedId ? styles.selected : ''} ${status === 'sos' ? styles.sosItem : ''}`}
-                        onClick={() => selectTracker(t.id)}
-                        aria-pressed={t.id === selectedId}
-                      >
-                        <div className={styles.trackerTop}>
-                          <span className={styles.trackerName}>{t.name}</span>
-                          <span className={`${styles.statusPill} ${statusClass(status)}`}>{STATUS_LABEL[status]}</span>
-                        </div>
-                        <div className={styles.trackerMeta}>
-                          <span>⏱ {formatFixAge(t.lastSeen, now)}</span>
-                          <span>📍 {t.locationCount ?? 0}</span>
-                          {t.battery && (
-                            <span className={styles[`battery_${battery}`]}>
-                              🔋 {Math.round(t.battery.level * 100)}%{t.battery.charging ? '⚡' : ''}
-                            </span>
-                          )}
-                          {t.device && <span>💻 {t.device.os}</span>}
-                        </div>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </section>
-        </aside>
-
-        <main className={styles.main}>
-          <LiveMap
-            markers={markers}
-            trail={selected ? history : undefined}
-            followId={selected?.id ?? null}
-            fitKey={fitKey}
-            onMarkerClick={(id) => setSelectedId(id)}
-            height="min(60vh, 520px)"
-          />
-
-          {selected ? (
-            <section className={styles.card} aria-labelledby="detail-title">
-              <div className={styles.detailHeader}>
-                <div>
-                  <h2 id="detail-title">{selected.name}</h2>
-                  <div className={styles.trackerId}>ID: {selected.id}</div>
-                </div>
-                <span className={`${styles.statusPill} ${statusClass(getTrackerStatus(selected, now))}`}>
-                  {STATUS_LABEL[getTrackerStatus(selected, now)]}
+              <div className={styles.sosText}>
+                <strong>SOS from {t.name}</strong>
+                <span>
+                  Sent {formatFixAge(t.sos?.triggeredAt, now)}
+                  {typeof t.sos?.latitude === 'number' && typeof t.sos?.longitude === 'number'
+                    ? ` · ${t.sos.latitude.toFixed(5)}, ${t.sos.longitude.toFixed(5)}`
+                    : ' · location unavailable'}
                 </span>
               </div>
-
-              <div className={styles.statsGrid}>
-                <Stat label="Last seen" value={formatFixAge(selected.lastSeen, now)} />
-                <Stat label="Accuracy" value={selected.lastLocation ? `±${Math.round(selected.lastLocation.accuracy)} m` : '—'} />
-                <Stat
-                  label="Battery"
-                  value={selected.battery ? `${Math.round(selected.battery.level * 100)}%${selected.battery.charging ? ' ⚡' : ''}` : 'N/A'}
-                />
-                <Stat label="Motion" value={selected.motion ?? '—'} />
-                <Stat label="Distance" value={formatDistance(stats.distanceMeters)} />
-                <Stat label="Duration" value={formatDuration(stats.durationMs)} />
-                <Stat label="Avg speed" value={`${stats.avgSpeedKmh.toFixed(1)} km/h`} />
-                <Stat label="Max speed" value={`${stats.maxSpeedKmh.toFixed(1)} km/h`} />
-                <Stat label="Device" value={selected.device ? `${selected.device.os} · ${selected.device.browser}` : '—'} />
-                <Stat label="Screen" value={selected.device?.screen ?? '—'} />
-                <Stat label="IP address" value={selected.ip ?? '—'} />
-                <Stat label="Created" value={new Date(selected.created).toLocaleDateString()} />
-              </div>
-
-              <div className={styles.row}>
-                <button type="button" className="btn btn-secondary" onClick={() => copyText(linkFor(selected.id), 'Tracking link copied')}>
-                  📋 Copy link
+              <div className={styles.sosActions}>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-secondary"
+                  onClick={() => {
+                    setSelectedId(t.id);
+                    setFitKey((k) => k + 1);
+                  }}
+                >
+                  <Crosshair size={14} aria-hidden="true" /> Show on map
                 </button>
-                <button type="button" className="btn btn-secondary" onClick={() => shareLink(linkFor(selected.id), selected.name)}>
-                  📤 Share
+                <button type="button" className="btn btn-sm btn-secondary" onClick={() => setMuted((m) => !m)}>
+                  {muted ? <Volume2 size={14} aria-hidden="true" /> : <VolumeX size={14} aria-hidden="true" />}
+                  {muted ? 'Unmute' : 'Mute'}
                 </button>
-                <button type="button" className="btn btn-secondary" onClick={() => setQr({ url: linkFor(selected.id), title: selected.name })}>
-                  ▦ QR code
+                <button
+                  type="button"
+                  className="btn btn-sm btn-danger"
+                  onClick={() => acknowledgeSos(t.id).catch(() => showToast('Could not acknowledge'))}
+                >
+                  <Check size={14} aria-hidden="true" /> Acknowledge
                 </button>
-                {selected.lastLocation && (
-                  <a
-                    className="btn btn-success"
-                    href={`https://www.google.com/maps?q=${selected.lastLocation.latitude},${selected.lastLocation.longitude}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    🗺️ Google Maps
-                  </a>
-                )}
               </div>
+            </div>
+          ))}
+        </div>
+      )}
 
-              <div className={styles.row}>
-                <span className={styles.muted}>Export {history.length} points:</span>
-                <button type="button" className={styles.smallBtn} disabled={!history.length} onClick={() => exportHistory('csv')}>CSV</button>
-                <button type="button" className={styles.smallBtn} disabled={!history.length} onClick={() => exportHistory('json')}>JSON</button>
-                <button type="button" className={styles.smallBtn} disabled={!history.length} onClick={() => exportHistory('gpx')}>GPX</button>
-                <span className={styles.spacer} />
-                <button type="button" className={styles.smallBtn} onClick={() => handleClearHistory(selected)}>Clear history</button>
-                <button type="button" className={`${styles.smallBtn} ${styles.danger}`} onClick={() => handleDelete(selected)}>Delete</button>
+      <main className={styles.content}>
+        <div className={styles.pageHead}>
+          <div>
+            <h1>Dashboard</h1>
+            <p className="muted">Everyone sharing their location with you, in real time.</p>
+          </div>
+          <Link href="/download" className="btn btn-secondary btn-sm">
+            <Smartphone size={14} aria-hidden="true" /> Get the app
+          </Link>
+        </div>
+
+        <section className={styles.summary} aria-label="Overview">
+          <SummaryCard icon={MapPin} label="Trackers" value={summary.total} />
+          <SummaryCard icon={Activity} label="Live now" value={summary.live} tone="success" />
+          <SummaryCard icon={Siren} label="SOS alerts" value={summary.sos} tone={summary.sos ? 'danger' : undefined} />
+          <SummaryCard
+            icon={BatteryLow}
+            label="Low battery"
+            value={summary.lowBattery}
+            tone={summary.lowBattery ? 'warning' : undefined}
+          />
+        </section>
+
+        <div className={styles.layout}>
+          <aside className={styles.sidebar}>
+            <section className="card">
+              <div className="card-header">
+                <h2 className="card-title">New tracker</h2>
               </div>
-
-              <h3 className={styles.sectionTitle}>💬 Messages</h3>
-              <ChatPanel
-                trackingId={selected.id}
-                role="owner"
-                senderName={user?.displayName || 'Owner'}
-                onIncoming={(m) => notify(`💬 ${selected.name}`, m.text, `chat-${selected.id}`)}
-              />
-
-              <h3 className={styles.sectionTitle}>📋 Location history</h3>
-              {pointsError && <p className={styles.muted}>History unavailable — deploy the latest firestore.rules.</p>}
-              {history.length === 0 ? (
-                <p className={styles.muted}>No locations yet. Share the tracking link to start receiving updates.</p>
-              ) : (
-                <>
-                  <div className={styles.tableWrap}>
-                    <table className={styles.table}>
-                      <thead>
-                        <tr>
-                          <th scope="col">Time</th>
-                          <th scope="col">Latitude</th>
-                          <th scope="col">Longitude</th>
-                          <th scope="col">Accuracy</th>
-                          <th scope="col">Speed</th>
-                          <th scope="col"><span className="sr-only">Map</span></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {historyNewestFirst.slice(0, historyShown).map((p) => (
-                          <tr key={`${p.timestamp}-${p.latitude}-${p.longitude}`}>
-                            <td>{new Date(p.timestamp).toLocaleString()}</td>
-                            <td>{p.latitude.toFixed(6)}</td>
-                            <td>{p.longitude.toFixed(6)}</td>
-                            <td>±{Math.round(p.accuracy)} m</td>
-                            <td>{typeof p.speed === 'number' ? `${(p.speed * 3.6).toFixed(1)} km/h` : '—'}</td>
-                            <td>
-                              <a href={`https://www.google.com/maps?q=${p.latitude},${p.longitude}`} target="_blank" rel="noopener noreferrer">
-                                Map ↗
-                              </a>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+              <div className="card-body">
+                <form onSubmit={handleCreateTracker} className={styles.inlineForm}>
+                  <label htmlFor="trackerName" className="sr-only">
+                    Tracker name
+                  </label>
+                  <input
+                    id="trackerName"
+                    value={trackerName}
+                    onChange={(e) => setTrackerName(e.target.value)}
+                    placeholder="Name, e.g. Mum's phone"
+                    maxLength={80}
+                    className="input"
+                  />
+                  <button type="submit" className="btn" disabled={creating}>
+                    <Plus size={16} aria-hidden="true" />
+                    {creating ? 'Creating…' : 'Create'}
+                  </button>
+                </form>
+                {generatedUrl && (
+                  <div className={styles.generatedLink}>
+                    <p className={styles.generatedTitle}>
+                      <CheckCircle2 size={16} aria-hidden="true" /> Link ready — send it to the person who will share
+                      their location.
+                    </p>
+                    <div className={styles.linkText}>{generatedUrl}</div>
+                    <div className={styles.row}>
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => copyText(generatedUrl, 'Tracking link copied')}
+                      >
+                        <Copy size={14} aria-hidden="true" /> Copy
+                      </button>
+                      <button type="button" className="btn btn-secondary btn-sm" onClick={() => shareLink(generatedUrl, 'tracker')}>
+                        <Share2 size={14} aria-hidden="true" /> Share
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => setQr({ url: generatedUrl, title: 'New tracking link' })}
+                      >
+                        <QrCode size={14} aria-hidden="true" /> QR code
+                      </button>
+                    </div>
                   </div>
-                  {historyShown < history.length && (
-                    <button type="button" className={styles.smallBtn} onClick={() => setHistoryShown((n) => n + HISTORY_PAGE)}>
-                      Show more ({history.length - historyShown} remaining)
+                )}
+                <details className={`disclosure ${styles.linkExisting}`}>
+                  <summary>
+                    <Link2 size={14} aria-hidden="true" /> Add an existing tracker by ID or link
+                  </summary>
+                  <form onSubmit={handleLinkExisting} className={styles.inlineForm}>
+                    <label htmlFor="linkInput" className="sr-only">
+                      Tracker ID or link
+                    </label>
+                    <input
+                      id="linkInput"
+                      value={linkInput}
+                      onChange={(e) => setLinkInput(e.target.value)}
+                      placeholder="track_… or tracking link"
+                      className="input"
+                    />
+                    <button type="submit" className="btn btn-secondary">
+                      Add
                     </button>
-                  )}
-                  {points.length >= TRACKING_CONFIG.historyLimit && (
-                    <p className={styles.muted}>Showing the latest {TRACKING_CONFIG.historyLimit} points.</p>
-                  )}
-                </>
+                  </form>
+                </details>
+              </div>
+            </section>
+
+            <section className={`card ${styles.listCard}`}>
+              <div className="card-header">
+                <h2 className="card-title">
+                  Trackers <span className={styles.count}>{trackers.length}</span>
+                </h2>
+              </div>
+              {trackers.length > 3 && (
+                <div className={styles.searchWrap}>
+                  <Search size={15} className={styles.searchIcon} aria-hidden="true" />
+                  <input
+                    type="search"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search by name, ID or device"
+                    aria-label="Search trackers"
+                    className={`input ${styles.search}`}
+                  />
+                </div>
+              )}
+
+              {permissionError ? (
+                <div className={styles.emptyState}>
+                  <AlertTriangle size={22} aria-hidden="true" />
+                  <p>Couldn&apos;t load your trackers.</p>
+                  <p className="muted">Deploy the latest firestore.rules (see FIREBASE_SETUP.md), then retry.</p>
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => setRetryKey((k) => k + 1)}>
+                    <RotateCw size={14} aria-hidden="true" /> Retry
+                  </button>
+                </div>
+              ) : filtered.length === 0 ? (
+                <div className={styles.emptyState}>
+                  <MapPin size={22} aria-hidden="true" />
+                  <p>{trackers.length === 0 ? 'No trackers yet' : 'No matches'}</p>
+                  <p className="muted">
+                    {trackers.length === 0
+                      ? 'Create one above and send the link to the person you want to see.'
+                      : 'Try a different search.'}
+                  </p>
+                </div>
+              ) : (
+                <ul className={styles.trackerList}>
+                  {filtered.map((t) => {
+                    const status = getTrackerStatus(t, now);
+                    const battery = classifyBattery(t.battery?.level, t.battery?.charging);
+                    return (
+                      <li key={t.id}>
+                        <button
+                          type="button"
+                          className={`${styles.trackerItem} ${t.id === selectedId ? styles.selected : ''} ${status === 'sos' ? styles.sosItem : ''}`}
+                          onClick={() => selectTracker(t.id)}
+                          aria-pressed={t.id === selectedId}
+                        >
+                          <span className={`${styles.avatar} ${styles[`avatar_${status}`] ?? ''}`} aria-hidden="true">
+                            {t.name.trim().charAt(0).toUpperCase() || '?'}
+                          </span>
+                          <span className={styles.trackerBody}>
+                            <span className={styles.trackerTop}>
+                              <span className={styles.trackerName}>{t.name}</span>
+                              <StatusBadge status={status} />
+                            </span>
+                            <span className={styles.trackerMeta}>
+                              <span>
+                                <Clock size={12} aria-hidden="true" /> {formatFixAge(t.lastSeen, now)}
+                              </span>
+                              {t.battery && (
+                                <span className={styles[`battery_${battery}`]}>
+                                  {t.battery.charging ? (
+                                    <BatteryCharging size={12} aria-hidden="true" />
+                                  ) : (
+                                    <Battery size={12} aria-hidden="true" />
+                                  )}{' '}
+                                  {Math.round(t.battery.level * 100)}%
+                                </span>
+                              )}
+                              {t.device && (
+                                <span>
+                                  <Smartphone size={12} aria-hidden="true" /> {t.device.os}
+                                </span>
+                              )}
+                            </span>
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
               )}
             </section>
-          ) : (
-            <section className={`${styles.card} ${styles.emptyState}`}>
-              <p>Select a tracker to see its trail, statistics, chat and history.</p>
-            </section>
-          )}
-        </main>
-      </div>
+          </aside>
+
+          <section className={styles.main}>
+            <div className={styles.mapCard}>
+              <LiveMap
+                markers={markers}
+                trail={selected ? history : undefined}
+                followId={selected?.id ?? null}
+                fitKey={fitKey}
+                onMarkerClick={(id) => setSelectedId(id)}
+                height="min(58vh, 540px)"
+              />
+            </div>
+
+            {selected && selectedStatus ? (
+              <section className="card" aria-labelledby="detail-title">
+                <div className={styles.detailHeader}>
+                  <div className={styles.detailTitle}>
+                    <div className={styles.titleRow}>
+                      <h2 id="detail-title">{selected.name}</h2>
+                      <StatusBadge status={selectedStatus} />
+                    </div>
+                    <button
+                      type="button"
+                      className={styles.trackerId}
+                      onClick={() => copyText(selected.id, 'Tracker ID copied')}
+                      title="Copy tracker ID"
+                    >
+                      {selected.id}
+                      <Copy size={12} aria-hidden="true" />
+                    </button>
+                  </div>
+                  <div className={styles.row}>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => copyText(linkFor(selected.id), 'Tracking link copied')}
+                    >
+                      <Copy size={14} aria-hidden="true" /> Copy link
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => shareLink(linkFor(selected.id), selected.name)}
+                    >
+                      <Share2 size={14} aria-hidden="true" /> Share
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => setQr({ url: linkFor(selected.id), title: selected.name })}
+                    >
+                      <QrCode size={14} aria-hidden="true" /> QR code
+                    </button>
+                    {selected.lastLocation && (
+                      <a
+                        className="btn btn-secondary btn-sm"
+                        href={`https://www.google.com/maps?q=${selected.lastLocation.latitude},${selected.lastLocation.longitude}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <ExternalLink size={14} aria-hidden="true" /> Google Maps
+                      </a>
+                    )}
+                  </div>
+                </div>
+
+                <div className={styles.tabs} role="tablist" aria-label="Tracker details">
+                  {(
+                    [
+                      ['overview', 'Overview'],
+                      ['messages', 'Messages'],
+                      ['history', `History (${history.length})`],
+                    ] as const
+                  ).map(([id, label]) => (
+                    <button
+                      key={id}
+                      type="button"
+                      role="tab"
+                      id={`tab-${id}`}
+                      aria-selected={tab === id}
+                      aria-controls={`panel-${id}`}
+                      className={styles.tab}
+                      onClick={() => setTab(id)}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="card-body" role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
+                  {tab === 'overview' && (
+                    <>
+                      <div className={styles.statsGrid}>
+                        <Stat label="Last seen" value={formatFixAge(selected.lastSeen, now)} />
+                        <Stat
+                          label="Accuracy"
+                          value={selected.lastLocation ? `±${Math.round(selected.lastLocation.accuracy)} m` : '—'}
+                        />
+                        <Stat
+                          label="Battery"
+                          value={
+                            selected.battery
+                              ? `${Math.round(selected.battery.level * 100)}%${selected.battery.charging ? ' · charging' : ''}`
+                              : '—'
+                          }
+                        />
+                        <Stat label="Motion" value={selected.motion ? capitalize(selected.motion) : '—'} />
+                        <Stat label="Distance" value={formatDistance(stats.distanceMeters)} />
+                        <Stat label="Duration" value={formatDuration(stats.durationMs)} />
+                        <Stat label="Avg speed" value={`${stats.avgSpeedKmh.toFixed(1)} km/h`} />
+                        <Stat label="Max speed" value={`${stats.maxSpeedKmh.toFixed(1)} km/h`} />
+                      </div>
+
+                      <h3 className={styles.sectionTitle}>Device</h3>
+                      <dl className={styles.dl}>
+                        <dt>Device</dt>
+                        <dd>{selected.device ? `${selected.device.os} · ${selected.device.browser}` : '—'}</dd>
+                        <dt>Screen</dt>
+                        <dd>{selected.device?.screen ?? '—'}</dd>
+                        <dt>IP address</dt>
+                        <dd className="mono">{selected.ip ?? '—'}</dd>
+                        <dt>Created</dt>
+                        <dd>{new Date(selected.created).toLocaleDateString()}</dd>
+                      </dl>
+
+                      <h3 className={styles.sectionTitle}>Data</h3>
+                      <div className={styles.dataRow}>
+                        <div className={styles.row}>
+                          <span className="muted">Export {history.length} points</span>
+                          {(['csv', 'json', 'gpx'] as const).map((f) => (
+                            <button
+                              key={f}
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              disabled={!history.length}
+                              onClick={() => exportHistory(f)}
+                            >
+                              <Download size={14} aria-hidden="true" /> {f.toUpperCase()}
+                            </button>
+                          ))}
+                        </div>
+                        <div className={styles.row}>
+                          <button type="button" className="btn btn-ghost btn-sm" onClick={() => handleClearHistory(selected)}>
+                            <Eraser size={14} aria-hidden="true" /> Clear history
+                          </button>
+                          <button type="button" className="btn btn-danger-outline btn-sm" onClick={() => handleDelete(selected)}>
+                            <Trash2 size={14} aria-hidden="true" /> Delete tracker
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {tab === 'messages' && (
+                    <ChatPanel
+                      trackingId={selected.id}
+                      role="owner"
+                      senderName={user?.displayName || 'Owner'}
+                      onIncoming={(m) => notify(`💬 ${selected.name}`, m.text, `chat-${selected.id}`)}
+                    />
+                  )}
+
+                  {tab === 'history' && (
+                    <>
+                      {pointsError && <p className="muted">History unavailable — deploy the latest firestore.rules.</p>}
+                      {history.length === 0 ? (
+                        <div className={styles.emptyState}>
+                          <Route size={22} aria-hidden="true" />
+                          <p>No locations yet</p>
+                          <p className="muted">Share the tracking link to start receiving updates.</p>
+                        </div>
+                      ) : (
+                        <>
+                          <div className={styles.tableWrap}>
+                            <table className={styles.table}>
+                              <thead>
+                                <tr>
+                                  <th scope="col">Time</th>
+                                  <th scope="col">Latitude</th>
+                                  <th scope="col">Longitude</th>
+                                  <th scope="col">Accuracy</th>
+                                  <th scope="col">Speed</th>
+                                  <th scope="col">
+                                    <span className="sr-only">Map</span>
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {historyNewestFirst.slice(0, historyShown).map((p) => (
+                                  <tr key={`${p.timestamp}-${p.latitude}-${p.longitude}`}>
+                                    <td>{new Date(p.timestamp).toLocaleString()}</td>
+                                    <td className="mono">{p.latitude.toFixed(6)}</td>
+                                    <td className="mono">{p.longitude.toFixed(6)}</td>
+                                    <td>±{Math.round(p.accuracy)} m</td>
+                                    <td>{typeof p.speed === 'number' ? `${(p.speed * 3.6).toFixed(1)} km/h` : '—'}</td>
+                                    <td>
+                                      <a
+                                        href={`https://www.google.com/maps?q=${p.latitude},${p.longitude}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className={styles.mapLink}
+                                      >
+                                        Map <ExternalLink size={12} aria-hidden="true" />
+                                      </a>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                          {historyShown < history.length && (
+                            <button
+                              type="button"
+                              className={`btn btn-secondary btn-sm ${styles.more}`}
+                              onClick={() => setHistoryShown((n) => n + HISTORY_PAGE)}
+                            >
+                              Show more ({history.length - historyShown} remaining)
+                            </button>
+                          )}
+                          {points.length >= TRACKING_CONFIG.historyLimit && (
+                            <p className="muted">Showing the latest {TRACKING_CONFIG.historyLimit} points.</p>
+                          )}
+                        </>
+                      )}
+                    </>
+                  )}
+                </div>
+              </section>
+            ) : (
+              <section className={`card ${styles.emptyState} ${styles.selectHint}`}>
+                <MousePointerClick size={22} aria-hidden="true" />
+                <p>Select a tracker</p>
+                <p className="muted">See its trail, statistics, messages and history.</p>
+              </section>
+            )}
+          </section>
+        </div>
+      </main>
 
       {toast && (
-        <div className={styles.toast} role="status">
+        <div className="toast" role="status">
           {toast}
         </div>
       )}
@@ -674,20 +882,39 @@ export default function Dashboard() {
   );
 }
 
-function SummaryCard({ label, value, tone }: { label: string; value: number; tone?: 'ok' | 'warning' | 'danger' }) {
+function capitalize(text: string) {
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+function SummaryCard({
+  icon: Icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: number;
+  tone?: 'success' | 'warning' | 'danger';
+}) {
   return (
-    <div className={`${styles.summaryCard} ${tone ? styles[`tone_${tone}`] : ''}`}>
-      <div className={styles.summaryValue}>{value}</div>
-      <div className={styles.summaryLabel}>{label}</div>
+    <div className={`card ${styles.summaryCard} ${tone ? styles[`tone_${tone}`] : ''}`}>
+      <span className={styles.summaryIcon} aria-hidden="true">
+        <Icon size={18} />
+      </span>
+      <div>
+        <div className={styles.summaryValue}>{value}</div>
+        <div className={styles.summaryLabel}>{label}</div>
+      </div>
     </div>
   );
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className={styles.stat}>
-      <div className={styles.statLabel}>{label}</div>
-      <div className={styles.statValue}>{value}</div>
+    <div className="stat">
+      <div className="stat-label">{label}</div>
+      <div className="stat-value">{value}</div>
     </div>
   );
 }
