@@ -47,7 +47,7 @@ Version 3 adds the features of [Realtime-Location-Tracker](https://github.com/ma
   - **Export to CSV, JSON or GPX.**
   - Clear history or delete the tracker, including all of its points and messages.
 - **Chat** with each tracked device. You get a notification when the device replies.
-- **Share links:** native share sheet on mobile, or copy to clipboard.
+- **Share links:** native share sheet on mobile, copy to clipboard, or show the link as a **QR code**. The QR code is generated in the browser (the link is never sent to a QR service) and can be saved as a PNG or printed. Scan it with a phone camera to open the link, or with the Android app to pair it.
 - **Link an existing tracker:** paste a Quick Track session ID or a tracking link to add it to your account.
 - **Search** the tracker list by name, ID, OS or browser.
 
@@ -56,7 +56,16 @@ Version 3 adds the features of [Realtime-Location-Tracker](https://github.com/ma
 - **Accessibility:** works with the keyboard, has visible focus rings, uses `aria-live`/`role=alert` for status updates, and respects `prefers-reduced-motion`.
 - **Responsive design:** the layout is tested at phone width, and buttons and other tap targets are at least 44 px.
 - **Firestore security rules** limit the data and validate every point and message (see below).
-- **CI:** type checking, unit tests and a production build on Node 20 and 22.
+- **CI:** type checking, unit tests and a production build on Node 20 and 22, plus an Android build (`.github/workflows/android.yml`).
+
+### Android app (`android/`)
+- **Runs as a foreground service**, so it keeps reporting with the screen off or the app closed. Android requires the notification that is shown while it runs; it has **Pause** and **Stop** buttons.
+- **Pair by scanning the dashboard's QR code**, pasting a tracking link, opening a tracking link with the app, or creating a **Quick Track ID**.
+- Reports to the **same console** as the web tracker: location, accuracy, speed, heading, battery, motion, device model and status (live, paused, stopped). It writes the same Firestore documents, so the dashboard, alerts, statistics and exports work unchanged.
+- Uses the **same adaptive policy** as the web tracker: 5 s while moving, a 60 s heartbeat while still, 8 m jitter filter. It switches to low-power location while still.
+- **Offline queue** stored on the phone; queued fixes are uploaded in order when the connection returns.
+- **SOS** (hold for 2 s), with a notification when the owner acknowledges it on the dashboard.
+- Optionally **resumes after a reboot** (needs location access "Allow all the time").
 
 ---
 
@@ -106,6 +115,8 @@ All of these are optional. The built-in config points at the default Firebase pr
 3. The person who opens the link sees what will be shared, taps **Start sharing**, and grants location permission.
 4. Watch them live on the map. Select the tracker to see the trail, statistics, history, exports and chat.
 5. Click **🔔 Enable alerts** once to get SOS and low-battery notifications even when the tab is in the background.
+
+**Android app:** install `GeoTracker.apk` (see [android/README.md](./android/README.md)), tap **Scan QR code**, scan the tracker's QR code on the dashboard (**▦ QR code**), then tap **Start**. The phone appears on the dashboard like any other tracker.
 
 **Quick Track** (`/tracker`) shares the current device without creating a tracker first. To watch it, copy its session ID into **Link an existing tracker** on any dashboard.
 
@@ -165,6 +176,7 @@ src/
 │   ├── LiveTracker.tsx   Device-side UI (consent, status, controls, SOS, chat)
 │   ├── SosButton.tsx     Hold-to-trigger SOS
 │   ├── ChatPanel.tsx     Realtime owner ↔ device chat
+│   ├── QrCodeDialog.tsx  Show a link as a QR code (save PNG / print)
 │   └── PwaRegister.tsx   Service worker registration
 ├── lib/
 │   ├── firebase.ts            Firebase init (persistent offline cache)
@@ -177,6 +189,7 @@ src/
 public/
 ├── manifest.json, sw.js, offline.html, icons/
 tests/                         Vitest unit tests
+android/                       Android app (Kotlin foreground service)
 firestore.rules                Security rules (deploy with firebase-tools)
 ```
 

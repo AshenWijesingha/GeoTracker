@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GeoTracker</string>
+    <string name="app_title">📍 GeoTracker</string>
+    <string name="app_subtitle">Shares this phone\'s location with a GeoTracker console, even when the app is closed.</string>
+
+    <string name="pairing_title">Console connection</string>
+    <string name="not_paired">Not paired. Scan the QR code on the dashboard, paste a tracking link, or start a Quick Track session.</string>
+    <string name="paired_to">Paired with: %1$s\nID: %2$s</string>
+    <string name="link_hint">Tracking link or tracker ID</string>
+    <string name="scan_qr">Scan QR code</string>
+    <string name="pair">Pair</string>
+    <string name="quick_track">New Quick Track ID</string>
+    <string name="share_id">Share tracker ID</string>
+    <string name="device_name">Device name (shown on the console)</string>
+    <string name="invalid_link">That isn\'t a valid tracking link or tracker ID.</string>
+    <string name="paired_ok">Paired with the console</string>
+    <string name="quick_track_explain">A new tracker ID was created. Add it on the dashboard with \"Link an existing tracker\" (or share it) so the console can see this phone.</string>
+    <string name="scan_failed">Could not scan: %1$s</string>
+
+    <string name="sharing_title">Location sharing</string>
+    <string name="status_active">● Sharing live</string>
+    <string name="status_paused">❚❚ Paused</string>
+    <string name="status_stopped">■ Not sharing</string>
+    <string name="start">Start</string>
+    <string name="resume">Resume</string>
+    <string name="pause">Pause</string>
+    <string name="stop">Stop</string>
+    <string name="autostart">Resume sharing after the phone restarts</string>
+    <string name="allow_background">Allow location \"all the time\" (needed to resume after restart)</string>
+    <string name="battery_settings">Battery optimisation settings</string>
+    <string name="pair_first">Pair with a console first.</string>
+
+    <string name="consent_title">Share your location?</string>
+    <string name="consent_body">While sharing is on, the owner of this tracker will see in real time:\n\n• your location, accuracy, speed and heading\n• your battery level and charging state\n• this phone\'s model, Android version and IP address\n\nSharing keeps running in the background and a notification is always shown. You can pause or stop at any time from the app or the notification.</string>
+    <string name="consent_accept">Share location</string>
+    <string name="cancel">Cancel</string>
+    <string name="permission_needed">Location permission is needed to share your location.</string>
+
+    <string name="sos">SOS</string>
+    <string name="sos_hint">Hold for 2 seconds to alert the tracker owner. This does NOT contact emergency services — in an emergency, call your local emergency number.</string>
+    <string name="sos_sent">SOS sent. The owner has been alerted on their dashboard.</string>
+    <string name="sos_acknowledged">✓ The owner acknowledged your SOS.</string>
+    <string name="sos_failed">Could not send SOS: %1$s</string>
+    <string name="im_safe">I\'m safe — cancel SOS</string>
+    <string name="open_console">Open GeoTracker console</string>
+
+    <string name="channel_tracking">Location sharing</string>
+    <string name="channel_tracking_desc">Shown while this phone shares its location</string>
+    <string name="channel_alerts">Alerts</string>
+    <string name="notif_sharing">Sharing location with GeoTracker</string>
+    <string name="notif_resume_title">Location sharing is off</string>
+    <string name="notif_resume_text">Tap to resume sharing with your GeoTracker console.</string>
+    <string name="notif_sos_ack_title">SOS acknowledged</string>
+    <string name="notif_sos_ack_text">The tracker owner has seen your SOS.</string>
+</resources>

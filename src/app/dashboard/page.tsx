@@ -35,6 +35,7 @@ import {
   unlockAudio,
 } from '@/lib/alerts';
 import { appBaseUrl } from '@/lib/paths';
+import QrCodeDialog from '@/components/QrCodeDialog';
 import { useNow } from '@/lib/use-now';
 import type { LocationData, Tracker } from '@/lib/types';
 import type { MapMarker } from '@/components/LiveMap';
@@ -78,6 +79,7 @@ export default function Dashboard() {
   const [creating, setCreating] = useState(false);
   const [generatedUrl, setGeneratedUrl] = useState('');
   const [linkInput, setLinkInput] = useState('');
+  const [qr, setQr] = useState<{ url: string; title: string } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [historyShown, setHistoryShown] = useState(HISTORY_PAGE);
   const [notifPermission, setNotifPermission] = useState<NotificationPermission | 'unsupported'>('default');
@@ -443,6 +445,9 @@ export default function Dashboard() {
                   <button type="button" className="btn btn-secondary" onClick={() => shareLink(generatedUrl, 'tracker')}>
                     📤 Share
                   </button>
+                  <button type="button" className="btn btn-secondary" onClick={() => setQr({ url: generatedUrl, title: 'New tracking link' })}>
+                    ▦ QR code
+                  </button>
                 </div>
               </div>
             )}
@@ -570,6 +575,9 @@ export default function Dashboard() {
                 <button type="button" className="btn btn-secondary" onClick={() => shareLink(linkFor(selected.id), selected.name)}>
                   📤 Share
                 </button>
+                <button type="button" className="btn btn-secondary" onClick={() => setQr({ url: linkFor(selected.id), title: selected.name })}>
+                  ▦ QR code
+                </button>
                 {selected.lastLocation && (
                   <a
                     className="btn btn-success"
@@ -660,6 +668,8 @@ export default function Dashboard() {
           {toast}
         </div>
       )}
+
+      {qr && <QrCodeDialog url={qr.url} title={qr.title} onClose={() => setQr(null)} />}
     </div>
   );
 }
